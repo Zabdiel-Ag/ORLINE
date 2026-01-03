@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ORLINE</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+
+  <link rel="stylesheet" href="Estilos/Estilos.css" />
+</head>
+
+<body>
+  <div class="shell d-flex align-items-center justify-content-center p-3">
+
+    <!-- LOGIN -->
+    <section id="view-login" class="w-100" style="max-width:420px;">
+      <div class="glass p-4">
+        <div class="mb-3">
+          <div class="h4 fw-bold mb-1">ORLINE</div>
+          <div class="muted">Inicia sesión para continuar</div>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label small muted">Usuario o correo</label>
+          <input id="loginEmail" class="form-control" type="text" placeholder="Ej: zab o doctor@correo.com" autocomplete="username" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small muted">Contraseña</label>
+          <input id="loginPassword" class="form-control" type="password" placeholder="••••••••" autocomplete="current-password" />
+        </div>
+
+        <div id="loginError" class="alert alert-danger py-2 d-none"></div>
+
+        <button id="btnLogin" class="btn btn-primary w-100 mb-2" type="button">Entrar</button>
+        <button id="goRegister" class="btn btn-soft w-100" type="button">Soy doctor, registrarme</button>
+
+        <div class="mt-3 small muted">
+          * Registro solo con invitación de ScanDent.
+        </div>
+      </div>
+    </section>
+
+    <!-- REGISTER (SOLO DOCTORES) -->
+    <section id="view-register" class="w-100 d-none" style="max-width:420px;">
+      <div class="glass p-4">
+        <div class="mb-3">
+          <div class="h4 fw-bold mb-1">Registro de doctor</div>
+          <div class="muted">Necesitas un código de invitación</div>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label small muted">Nombre</label>
+          <input id="regName" class="form-control" type="text" placeholder="Ej: Dr. Juan Pérez" autocomplete="name" />
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label small muted">Correo</label>
+          <input id="regEmail" class="form-control" type="email" placeholder="tucorreo@ejemplo.com" autocomplete="email" />
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label small muted">Contraseña</label>
+          <input id="regPassword" class="form-control" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password" />
+        </div>
+
+        <!-- CÓDIGO INVITACIÓN -->
+        <div class="mb-2">
+          <label class="form-label small muted">Código de invitación</label>
+          <input id="regInviteCode" class="form-control" type="text" placeholder="Ej: SD-9F2K7A" />
+          <div class="form-text muted">Pídelo a ScanDent para poder registrarte.</div>
+        </div>
+
+        <!-- TÉRMINOS -->
+        <div class="mb-3">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="regTerms">
+            <label class="form-check-label small muted" for="regTerms">
+              Acepto el uso responsable de información de pacientes.
+            </label>
+          </div>
+        </div>
+
+        <div id="regError" class="alert alert-danger py-2 d-none"></div>
+
+        <button id="btnRegister" class="btn btn-primary w-100 mb-2" type="button">Continuar</button>
+        <button id="goLogin" class="btn btn-soft w-100" type="button">Ya tengo cuenta</button>
+      </div>
+    </section>
+
+    <!-- DOCTOR PROFILE (UNA SOLA VEZ) -->
+    <section id="view-doctor-profile" class="w-100 d-none" style="max-width:520px;">
+      <div class="glass p-4">
+        <div class="mb-3">
+          <div class="h4 fw-bold mb-1">Perfil del Doctor</div>
+          <div class="muted">Completa tus datos para usar ORLINE</div>
+        </div>
+
+        <div class="row g-2">
+          <div class="col-12 col-md-6">
+            <label class="form-label small muted">Nombre del consultorio / local</label>
+            <input id="docClinicName" class="form-control" type="text" placeholder="Ej: Clínica Dental Sonrisa" />
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label class="form-label small muted">Ciudad</label>
+            <input id="docCity" class="form-control" type="text" placeholder="Ej: Aguascalientes" />
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label class="form-label small muted">Teléfono</label>
+            <input id="docPhone" class="form-control" type="tel" placeholder="Ej: 449 000 0000" />
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label class="form-label small muted">Cédula profesional (opcional)</label>
+            <input id="docCedula" class="form-control" type="text" placeholder="Ej: 1234567" />
+          </div>
+
+          <div class="col-12">
+            <label class="form-label small muted">Nombre del gabinete / equipo</label>
+            <input id="docCabinetName" class="form-control" type="text" placeholder="Ej: RayScan / CBCT / Panorámica" />
+            <div class="form-text muted">Como lo identificas tú en tu consultorio.</div>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label small muted">Notas (opcional)</label>
+            <textarea id="docNotes" class="form-control" rows="3" placeholder="Preferencias, horarios, etc."></textarea>
+          </div>
+        </div>
+
+        <div id="docProfileError" class="alert alert-danger py-2 d-none mt-3"></div>
+
+        <button id="btnSaveDoctorProfile" class="btn btn-primary w-100 mt-2" type="button">Guardar y entrar</button>
+      </div>
+    </section>
+
+    <!-- ADMIN PANEL (SOLO TÚ) -->
+    <section id="view-admin" class="w-100 d-none" style="max-width:720px;">
+      <div class="glass p-4">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <div>
+            <div class="h4 fw-bold mb-1">Panel Admin</div>
+            <div class="muted">Invitaciones y doctores</div>
+          </div>
+          <button id="btnLogoutAdmin" class="btn btn-soft" type="button">Salir</button>
+        </div>
+
+        <div class="row g-3">
+          <!-- Crear invitación -->
+          <div class="col-12 col-lg-5">
+            <div class="p-3 rounded-4" style="background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);">
+              <div class="fw-semibold mb-2">Crear invitación</div>
+
+              <div class="mb-2">
+                <label class="form-label small muted">Nombre del doctor (referencia)</label>
+                <input id="invDoctorName" class="form-control" type="text" placeholder="Ej: Dra. Lupita" />
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label small muted">Correo del doctor (opcional)</label>
+                <input id="invDoctorEmail" class="form-control" type="email" placeholder="Ej: dra@correo.com" />
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label small muted">Vigencia (días)</label>
+                <input id="invDays" class="form-control" type="number" min="1" value="7" />
+              </div>
+
+              <button id="btnGenerateInvite" class="btn btn-primary w-100" type="button">Generar código</button>
+
+              <div class="mt-3 d-none" id="inviteResultWrap">
+                <div class="small muted mb-1">Código generado</div>
+                <div class="d-flex gap-2">
+                  <input id="inviteCodeResult" class="form-control" type="text" readonly />
+                  <button id="btnCopyInvite" class="btn btn-soft" type="button">Copiar</button>
+                </div>
+              </div>
+
+              <div class="small muted mt-3">
+                * En producción el código se valida en backend.
+              </div>
+            </div>
+          </div>
+
+          <!-- Lista doctores -->
+          <div class="col-12 col-lg-7">
+            <div class="p-3 rounded-4" style="background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="fw-semibold">Doctores registrados</div>
+                <button id="btnRefreshDoctors" class="btn btn-soft btn-sm" type="button">Actualizar</button>
+              </div>
+
+              <div class="table-responsive">
+                <table class="table table-dark table-striped align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th>Doctor</th>
+                      <th>Consultorio</th>
+                      <th>Ciudad</th>
+                      <th class="text-end">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="doctorsTableBody">
+                    <tr>
+                      <td colspan="4" class="text-center small muted">Sin datos aún…</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="small muted mt-2">
+                Acciones demo: reset pass y bloquear.
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- (OPCIONAL) VERIFY VIEW - no hace daño si está, el JS lo contempla -->
+    <section id="view-verify" class="w-100 d-none" style="max-width:420px;">
+      <div class="glass p-4">
+        <div class="mb-2">
+          <div class="h4 fw-bold mb-1">Verificación</div>
+          <div class="muted">Ingresa el código enviado a tu correo (demo)</div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small muted">Código</label>
+          <input id="verifyCode" class="form-control" type="text" placeholder="Ej: 123456" inputmode="numeric" />
+        </div>
+
+        <div id="verifyError" class="alert alert-danger py-2 d-none"></div>
+
+        <button id="btnVerify" class="btn btn-primary w-100 mb-2" type="button">Verificar</button>
+        <button id="btnResendCode" class="btn btn-soft w-100" type="button">Reenviar código</button>
+
+        <div class="text-center mt-3">
+          <button id="goLoginFromVerify" class="btn btn-link btn-sm text-decoration-none" type="button">Volver al login</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="JavaScript/Script.js"></script>
+  <script src="JavaScript/dashboard.js"></script>
+</body>
+</html>
