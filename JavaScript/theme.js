@@ -2,10 +2,15 @@
   const THEME_KEY = "appTheme"; // "dark" | "light"
   const LIGHT_CLASS = "theme-light";
 
+  const LOGOS = {
+    dark: "Multimedia/3.png",   // logo para MODO OSCURO
+    light: "Multimedia/2.png"   // logo para MODO CLARO (sin fondo si lo haces PNG)
+  };
+
   function setThemeClass(isLight) {
-    // Ponemos la clase en html Y body para que cualquier CSS lo detecte
     document.documentElement.classList.toggle(LIGHT_CLASS, isLight);
     document.body?.classList.toggle(LIGHT_CLASS, isLight);
+    document.documentElement.dataset.theme = isLight ? "light" : "dark";
   }
 
   function updateThemeIcon(isLight) {
@@ -20,13 +25,24 @@
     btn.title = isLight ? "Tema claro" : "Tema oscuro";
   }
 
+  function updateBrandLogo(isLight) {
+    const img = document.querySelector("img.topfb-logoimg");
+    if (!img) return;
+
+    const nextSrc = isLight ? LOGOS.light : LOGOS.dark;
+
+    // Evita recargas innecesarias si ya está puesto
+    const current = (img.getAttribute("src") || "").trim();
+    if (current === nextSrc) return;
+
+    img.setAttribute("src", nextSrc);
+  }
+
   function applyTheme(theme) {
     const isLight = theme === "light";
     setThemeClass(isLight);
     updateThemeIcon(isLight);
-
-    // (Opcional) ayuda a componentes que dependan del dataset
-    document.documentElement.dataset.theme = isLight ? "light" : "dark";
+    updateBrandLogo(isLight);
   }
 
   function getSavedTheme() {
@@ -43,15 +59,12 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    // 1) aplica al cargar
     applyTheme(getSavedTheme());
 
-    // 2) click del botón
     const btn = document.getElementById("btnTheme");
     if (btn) btn.addEventListener("click", toggleTheme);
   });
 
-  // 3) sincroniza tema entre pestañas / páginas abiertas
   window.addEventListener("storage", (e) => {
     if (e.key === THEME_KEY) {
       applyTheme(getSavedTheme());

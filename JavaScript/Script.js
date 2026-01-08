@@ -1,4 +1,3 @@
-
 // Admin fijo: user=zab pass=admin123$
 
 const USERS_KEY = "orline_users";
@@ -6,11 +5,15 @@ const SESSION_KEY = "orline_session";
 const INVITES_KEY = "orline_invites";
 const DOCTOR_PROFILES_KEY = "orline_doctor_profiles";
 
-// ====== Const Admin ======
+// Compat temporal si tu Dashboard aún usa pos_session
+const LEGACY_SESSION_KEYS = ["pos_session"];
+
 const ADMIN_USERNAME = "zab";
 const ADMIN_PASSWORD = "admin123$";
 
-// ====== Helpers: Storage ======
+/* -------------------------
+   Helpers: Storage
+-------------------------- */
 function readLS(key, fallback) {
   try {
     const raw = localStorage.getItem(key);
@@ -23,27 +26,29 @@ function writeLS(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
-// Users
 function getUsers() { return readLS(USERS_KEY, []); }
 function saveUsers(users) { writeLS(USERS_KEY, users); }
 
-// Session
 function getSession() { return readLS(SESSION_KEY, null); }
 function setSession(session) { writeLS(SESSION_KEY, session); }
-function clearSession() { localStorage.removeItem(SESSION_KEY); }
 
-// Invites
+function clearSession() {
+  localStorage.removeItem(SESSION_KEY);
+  for (const k of LEGACY_SESSION_KEYS) localStorage.removeItem(k);
+}
+
 function getInvites() { return readLS(INVITES_KEY, []); }
 function saveInvites(invites) { writeLS(INVITES_KEY, invites); }
 
-// Doctor Profiles
 function getDoctorProfiles() { return readLS(DOCTOR_PROFILES_KEY, []); }
 function saveDoctorProfiles(items) { writeLS(DOCTOR_PROFILES_KEY, items); }
 function getDoctorProfileByUserId(userId) {
   return getDoctorProfiles().find(p => p.userId === userId) || null;
 }
 
-// ====== Helpers: UI ======
+/* -------------------------
+   Helpers: UI
+-------------------------- */
 function showError(el, msg) {
   if (!el) return;
   el.textContent = msg;
@@ -59,8 +64,13 @@ function showView(viewId) {
   views.forEach(id => document.getElementById(id)?.classList.add("d-none"));
   document.getElementById(viewId)?.classList.remove("d-none");
 }
+function redirectReplace(url) {
+  window.location.replace(url);
+}
 
-// ====== Validation ======
+/* -------------------------
+   Validation / utils
+-------------------------- */
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim());
 }
@@ -69,7 +79,16 @@ function normalize(str) {
 }
 function nowISO() { return new Date().toISOString(); }
 
-// Acepta login por correo o username
+function escapeHtml(str) {
+  return String(str || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+/* Login por correo o username */
 function findUserByLogin(login) {
   const users = getUsers();
   const v = String(login || "").trim().toLowerCase();
@@ -84,14 +103,15 @@ function findUserByEmail(email) {
   return users.find(u => (u.email || "").toLowerCase() === v) || null;
 }
 
-// ====== Seed Admin (una sola vez) ======
+/* -------------------------
+   Seed Admin (una sola vez)
+-------------------------- */
 function seedAdmin() {
   const users = getUsers();
 
   const exists = users.some(u =>
     (u.username || "").toLowerCase() === ADMIN_USERNAME.toLowerCase()
   );
-
   if (exists) return;
 
   users.push({
@@ -99,7 +119,7 @@ function seedAdmin() {
     role: "admin",
     username: ADMIN_USERNAME,
     name: "Admin",
-    email: "", // opcional
+    email: "",
     password: ADMIN_PASSWORD,
     createdAt: nowISO()
   });
@@ -107,9 +127,10 @@ function seedAdmin() {
   saveUsers(users);
 }
 
-// ====== Invites ======
+/* -------------------------
+   Invites
+-------------------------- */
 function genInviteCode() {
-  // SD-XXXXXX
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let s = "SD-";
   for (let i = 0; i < 6; i++) s += chars[Math.floor(Math.random() * chars.length)];
@@ -119,7 +140,6 @@ function genInviteCode() {
 function createInvite({ doctorName = "", doctorEmail = "", days = 7 } = {}) {
   const invites = getInvites();
   const code = genInviteCode();
-
   const expiresAt = new Date(Date.now() + Number(days) * 24 * 60 * 60 * 1000).toISOString();
 
   invites.push({
@@ -147,9 +167,8 @@ function validateInvite(code, email) {
   if (inv.usedAt) return { ok: false, msg: "Ese código ya fue usado." };
 
   const exp = new Date(inv.expiresAt).getTime();
-  if (Number.isFinite(exp) && Date.now() > exp) return { ok: false, msg: "Ese código ya expiró. Pide otro a ScanDent." };
+  if (Number.isFinite(exp) && Date.now() > exp) return { ok: false, msg: "Ese código ya expiró. Pide otro al admin." };
 
-  // Si guardaste correo en invitación, lo forzamos (opcional)
   if (inv.doctorEmail && inv.doctorEmail !== e) {
     return { ok: false, msg: "Este código no corresponde a ese correo." };
   }
@@ -167,18 +186,25 @@ function markInviteUsed(inviteId, userId) {
   }
 }
 
-// ====== Routing / Next Step ======
+/* -------------------------
+   Bloqueo demo
+-------------------------- */
+function isBlockedUser(user) {
+  return !!user?.blocked;
+}
+
+/* -------------------------
+   Routing / Next Step
+-------------------------- */
 function goToNextStep(user) {
   if (!user) return showView("view-login");
 
-  // Admin -> Panel admin
   if (user.role === "admin") {
     renderDoctorsTable();
     showView("view-admin");
     return;
   }
 
-  // Doctor -> si no tiene perfil, pedirlo
   const profile = getDoctorProfileByUserId(user.id);
   if (!profile) {
     clearDoctorProfileForm();
@@ -186,11 +212,12 @@ function goToNextStep(user) {
     return;
   }
 
-  // Doctor ya completo -> Dashboard
-  window.location.href = "Dashboard.html";
+  redirectReplace("Dashboard.html");
 }
 
-// ====== DOM ======
+/* -------------------------
+   DOM refs
+-------------------------- */
 const loginEmail = document.getElementById("loginEmail");
 const loginPassword = document.getElementById("loginPassword");
 const loginError = document.getElementById("loginError");
@@ -202,11 +229,8 @@ const regInviteCode = document.getElementById("regInviteCode");
 const regTerms = document.getElementById("regTerms");
 const regError = document.getElementById("regError");
 
-// Verify (si no lo usas, no pasa nada)
-const verifyCode = document.getElementById("verifyCode");
 const verifyError = document.getElementById("verifyError");
 
-// Doctor Profile
 const docClinicName = document.getElementById("docClinicName");
 const docCity = document.getElementById("docCity");
 const docPhone = document.getElementById("docPhone");
@@ -215,7 +239,6 @@ const docCabinetName = document.getElementById("docCabinetName");
 const docNotes = document.getElementById("docNotes");
 const docProfileError = document.getElementById("docProfileError");
 
-// Admin
 const invDoctorName = document.getElementById("invDoctorName");
 const invDoctorEmail = document.getElementById("invDoctorEmail");
 const invDays = document.getElementById("invDays");
@@ -223,7 +246,9 @@ const inviteResultWrap = document.getElementById("inviteResultWrap");
 const inviteCodeResult = document.getElementById("inviteCodeResult");
 const doctorsTableBody = document.getElementById("doctorsTableBody");
 
-// ====== View Nav Buttons ======
+/* -------------------------
+   View Nav Buttons
+-------------------------- */
 document.getElementById("goRegister")?.addEventListener("click", () => {
   hideError(loginError);
   showView("view-register");
@@ -237,7 +262,9 @@ document.getElementById("goLoginFromVerify")?.addEventListener("click", () => {
   showView("view-login");
 });
 
-// ====== Register (SOLO DOCTORES) ======
+/* -------------------------
+   Register (solo doctores)
+-------------------------- */
 document.getElementById("btnRegister")?.addEventListener("click", () => {
   hideError(regError);
 
@@ -262,7 +289,7 @@ document.getElementById("btnRegister")?.addEventListener("click", () => {
   const newUser = {
     id: crypto.randomUUID(),
     role: "doctor",
-    username: "", // doctores por email
+    username: "",
     name,
     email: email.toLowerCase(),
     password,
@@ -272,21 +299,20 @@ document.getElementById("btnRegister")?.addEventListener("click", () => {
   users.push(newUser);
   saveUsers(users);
 
-  // Marcar invitación usada
   markInviteUsed(inviteCheck.invite.id, newUser.id);
 
-  // Sesión
   setSession({ userId: newUser.id, role: "doctor", loginAt: nowISO() });
 
-  // Siguiente paso: perfil doctor
   goToNextStep(newUser);
 });
 
-// ====== Login (Admin o Doctor) ======
+/* -------------------------
+   Login (admin o doctor)
+-------------------------- */
 document.getElementById("btnLogin")?.addEventListener("click", () => {
   hideError(loginError);
 
-  const login = normalize(loginEmail?.value); // puede ser email o username
+  const login = normalize(loginEmail?.value);
   const password = String(loginPassword?.value || "");
 
   if (!login) return showError(loginError, "Pon tu usuario o correo.");
@@ -294,14 +320,17 @@ document.getElementById("btnLogin")?.addEventListener("click", () => {
 
   const user = findUserByLogin(login);
   if (!user) return showError(loginError, "No existe ese usuario.");
-
   if (user.password !== password) return showError(loginError, "Contraseña incorrecta.");
+
+  if (isBlockedUser(user)) return showError(loginError, "Tu acceso está bloqueado. Contacta al admin.");
 
   setSession({ userId: user.id, role: user.role, loginAt: nowISO() });
   goToNextStep(user);
 });
 
-// ====== Doctor Profile Save ======
+/* -------------------------
+   Doctor Profile Save
+-------------------------- */
 function clearDoctorProfileForm() {
   if (docClinicName) docClinicName.value = "";
   if (docCity) docCity.value = "";
@@ -339,9 +368,8 @@ document.getElementById("btnSaveDoctorProfile")?.addEventListener("click", () =>
   if (cabinet.length < 2) return showError(docProfileError, "Pon el nombre del gabinete/equipo.");
 
   const profiles = getDoctorProfiles();
-
-  // evitar duplicado
   const existing = profiles.find(p => p.userId === user.id);
+
   if (existing) {
     existing.clinicName = clinic;
     existing.city = city;
@@ -366,18 +394,18 @@ document.getElementById("btnSaveDoctorProfile")?.addEventListener("click", () =>
   }
 
   saveDoctorProfiles(profiles);
-
-  // listo -> dashboard
-  window.location.href = "Dashboard.html";
+  redirectReplace("Dashboard.html");
 });
 
-// ====== Admin Panel Actions ======
+/* -------------------------
+   Admin Panel
+-------------------------- */
 document.getElementById("btnLogoutAdmin")?.addEventListener("click", () => {
+  sessionStorage.setItem("orline_logout", "1");
   clearSession();
   showView("view-login");
 });
 
-// Generar invitación
 document.getElementById("btnGenerateInvite")?.addEventListener("click", () => {
   const session = getSession();
   if (!session?.userId) return;
@@ -392,9 +420,7 @@ document.getElementById("btnGenerateInvite")?.addEventListener("click", () => {
 
   if (days < 1) return;
 
-  // Si pusiste correo, validarlo (opcional)
   if (dEmail && !isValidEmail(dEmail)) {
-    // si tienes algún error UI propio lo metes, aquí lo dejo simple:
     alert("Correo del doctor inválido (opcional).");
     return;
   }
@@ -404,26 +430,22 @@ document.getElementById("btnGenerateInvite")?.addEventListener("click", () => {
   if (inviteCodeResult) inviteCodeResult.value = code;
   inviteResultWrap?.classList.remove("d-none");
 
-  // Limpieza ligera
   if (invDoctorName) invDoctorName.value = "";
   if (invDoctorEmail) invDoctorEmail.value = "";
   if (invDays) invDays.value = "7";
 });
 
-// Copiar invitación
 document.getElementById("btnCopyInvite")?.addEventListener("click", async () => {
   const code = String(inviteCodeResult?.value || "");
   if (!code) return;
   try {
     await navigator.clipboard.writeText(code);
   } catch {
-    // fallback
     inviteCodeResult?.select();
     document.execCommand("copy");
   }
 });
 
-// Tabla doctores
 document.getElementById("btnRefreshDoctors")?.addEventListener("click", () => {
   renderDoctorsTable();
 });
@@ -435,13 +457,11 @@ function renderDoctorsTable() {
   const profiles = getDoctorProfiles();
 
   if (users.length === 0) {
-    doctorsTableBody.innerHTML = `
-      <tr><td colspan="4" class="text-center small muted">Sin datos aún…</td></tr>
-    `;
+    doctorsTableBody.innerHTML = `<tr><td colspan="4" class="text-center small muted">Sin datos aún…</td></tr>`;
     return;
   }
 
-  const rows = users.map(u => {
+  doctorsTableBody.innerHTML = users.map(u => {
     const p = profiles.find(x => x.userId === u.id);
     const clinic = p?.clinicName || "—";
     const city = p?.city || "—";
@@ -462,9 +482,6 @@ function renderDoctorsTable() {
     `;
   }).join("");
 
-  doctorsTableBody.innerHTML = rows;
-
-  // Acciones tabla (demo)
   doctorsTableBody.querySelectorAll("button[data-action]")?.forEach(btn => {
     btn.addEventListener("click", () => {
       const action = btn.getAttribute("data-action");
@@ -472,7 +489,6 @@ function renderDoctorsTable() {
       if (!action || !id) return;
 
       if (action === "reset") {
-        // demo: reset a 123456 (en real, mandar correo)
         resetDoctorPassword(id, "123456");
         alert("Password reseteada a: 123456 (demo)");
       }
@@ -503,33 +519,32 @@ function toggleDoctorBlocked(userId) {
   saveUsers(users);
 }
 
-// ====== Security check: blocked users ======
-function isBlockedUser(user) {
-  return !!user?.blocked;
-}
+/* -------------------------
+   Terms button helper (si existe)
+-------------------------- */
+document.addEventListener("DOMContentLoaded", () => {
+  const btnRead = document.getElementById("btnTermsRead");
+  const chk = document.getElementById("regTerms");
+  if (btnRead && chk) {
+    btnRead.addEventListener("click", () => {
+      chk.checked = true;
+    });
+  }
+});
 
-// Override login to block
-(function patchBlockedLogin() {
-  const btn = document.getElementById("btnLogin");
-  if (!btn) return;
-
-  // ya añadimos listener arriba, pero bloqueamos en init y en next step
-  // el bloqueo real lo harías en backend; aquí es demo.
-})();
-
-// ====== Escape HTML ======
-function escapeHtml(str) {
-  return String(str || "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-// ====== Init ======
+/* -------------------------
+   Init
+-------------------------- */
 (function init() {
   seedAdmin();
+
+  /* Guard: si vienes de un logout, no auto-redirijas */
+  if (sessionStorage.getItem("orline_logout") === "1") {
+    sessionStorage.removeItem("orline_logout");
+    clearSession();
+    showView("view-login");
+    return;
+  }
 
   const session = getSession();
   if (!session?.userId) {
@@ -546,7 +561,7 @@ function escapeHtml(str) {
 
   if (isBlockedUser(user)) {
     clearSession();
-    showError(loginError, "Tu acceso está bloqueado. Contacta a ScanDent.");
+    showError(loginError, "Tu acceso está bloqueado. Contacta al admin.");
     showView("view-login");
     return;
   }
