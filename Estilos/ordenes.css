@@ -1,0 +1,2126 @@
+:root{
+  /* Base */
+  --bg:#0b0f14;
+
+  --text: rgba(233,238,245,.92);
+  --muted: rgba(233,238,245,.70);
+
+  --card: rgba(255,255,255,.06);
+  --card2: rgba(255,255,255,.08);
+  --stroke: rgba(255,255,255,.12);
+
+  --primary: rgba(13,110,253,.92);
+  --primaryGlow: rgba(13,110,253,.20);
+
+  --shadow: 0 18px 45px rgba(0,0,0,.40);
+
+  /* Top glass */
+  --topBg: rgba(11,15,20,.55);
+  --topBorder: rgba(255,255,255,.10);
+
+  /* Modal glass */
+  --modalBg: linear-gradient(180deg, rgba(20,25,35,.98), rgba(11,15,20,.98));
+  --modalText: var(--text);
+  --modalBorder: rgba(255,255,255,.12);
+  --modalCloseInvert: 1;
+
+  /* Backdrop */
+  --backdropA: rgba(13,110,253,.18);
+  --backdropB: rgba(0,0,0,.85);
+
+  /* Scrollbar */
+  --scrollThumb: rgba(255,255,255,.14);
+  --scrollTrack: rgba(255,255,255,.05);
+}
+
+/* =========================
+   LIGHT THEME
+   ========================= */
+html.theme-light,
+body.theme-light{
+  --bg:#f3f6ff;
+
+  --text: rgba(18,22,30,.92);
+  --muted: rgba(18,22,30,.62);
+
+  --card: rgba(255,255,255,.62);
+  --card2: rgba(255,255,255,.82);
+  --stroke: rgba(20,25,35,.10);
+
+  --shadow: 0 22px 50px rgba(20,25,35,.12);
+
+  --topBg: rgba(255,255,255,.72);
+  --topBorder: rgba(20,25,35,.10);
+
+  --modalBg: linear-gradient(180deg, rgba(255,255,255,.97), rgba(245,248,255,.97));
+  --modalText: rgba(20,25,35,.92);
+  --modalBorder: rgba(0,0,0,.10);
+  --modalCloseInvert: 0;
+
+  --backdropA: rgba(13,110,253,.12);
+  --backdropB: rgba(0,0,0,.45);
+
+  --scrollThumb: rgba(0,0,0,.18);
+  --scrollTrack: rgba(0,0,0,.06);
+
+  
+
+
+
+}
+
+*{ box-sizing:border-box; }
+html, body{ height:100%; }
+
+body{
+  background:
+    radial-gradient(1200px 600px at 12% 8%, rgba(120,140,255,.22), transparent 58%),
+    radial-gradient(900px 520px at 92% 10%, rgba(0,255,200,.10), transparent 52%),
+    radial-gradient(900px 520px at 55% 95%, rgba(255,120,200,.08), transparent 55%),
+    var(--bg);
+
+  color: var(--text);
+  font-family: "Century Gothic", "Segoe UI", Tahoma, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.muted{ color: var(--muted); }
+
+/* =========================
+   TOPFB (Glass Navbar)
+   ========================= */
+.topfb{
+  position: sticky;
+  top: 12px;
+  z-index: 1030;
+  margin: 12px auto 0;
+  width: min(1260px, 98vw);
+}
+
+.topfb-inner{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 12px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--bg2) 70%, transparent);  border: 1px solid var(--topBorder);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.topfb-left{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width: 260px;
+}
+
+.topfb-badge{
+  width: 44px;
+  height: 44px;
+  display:grid;
+  place-items:center;
+  border-radius: 16px;
+  background: rgba(255,255,255,.10);
+  border: 1px solid var(--stroke);
+  overflow: hidden;
+}
+
+.topfb-logoimg{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.topfb-center{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex: 1;
+  gap: 10px;
+}
+
+.topfb-tab{
+  width: 54px;
+  height: 40px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  display:grid;
+  place-items:center;
+  text-decoration:none;
+  transition: background .18s ease, border-color .18s ease, transform .08s ease, color .18s ease;
+}
+.topfb-tab:hover{
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+.topfb-tab.active{
+  background: rgba(255,255,255,.08);
+  border-color: var(--stroke);
+  color: var(--text);
+}
+
+.topfb-right{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap: 8px;
+  min-width: 140px;
+}
+
+.topfb-iconbtn{
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  border: 1px solid var(--stroke);
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  display:grid;
+  place-items:center;
+  transition: transform .08s ease, background .18s ease, border-color .18s ease;
+}
+.topfb-iconbtn:hover{
+  background: rgba(255,255,255,.10);
+  border-color: rgba(255,255,255,.18);
+  transform: translateY(-1px);
+}
+
+/* =========================
+   CARDS / GLASS
+   ========================= */
+.cardx,
+.glass{
+  background: linear-gradient(180deg, var(--card2), var(--card));
+  border: 1px solid var(--stroke);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* =========================
+   BUTTONS
+   ========================= */
+.btn-soft{
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.14);
+  color: var(--text);
+  border-radius: 14px;
+  transition: transform .08s ease, background .2s ease, border-color .2s ease;
+}
+.btn-soft:hover{
+  background: rgba(255,255,255,.12);
+  border-color: rgba(255,255,255,.20);
+  transform: translateY(-1px);
+}
+
+.btn-primary{
+  border-radius: 14px;
+  box-shadow: 0 10px 24px rgba(13,110,253,.22);
+  transition: transform .08s ease, box-shadow .2s ease;
+}
+.btn-primary:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(13,110,253,.30);
+}
+
+/* =========================
+   INPUTS
+   ========================= */
+.form-control, .form-select{
+  background: rgba(255,255,255,.06) !important;
+  border: 1px solid rgba(255,255,255,.14) !important;
+  color: var(--text) !important;
+  border-radius: 14px;
+}
+.form-control:focus, .form-select:focus{
+  background: rgba(255,255,255,.08) !important;
+  border-color: rgba(13,110,253,.60) !important;
+  box-shadow: 0 0 0 .22rem var(--primaryGlow) !important;
+}
+
+/* =========================
+   ORDENES (RECETA DINÁMICA)
+   ========================= */
+.order-grid{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+@media (min-width: 992px){
+  .order-grid{ grid-template-columns: 1fr 1fr; }
+}
+
+.order-card{
+  position: relative;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  box-shadow: 0 12px 40px rgba(0,0,0,.20);
+  padding: 14px 14px 14px 54px;
+  overflow: hidden;
+  transition: box-shadow .2s ease, border-color .2s ease;
+}
+.order-card.is-active{
+  border-color: rgba(255,140,0,.65);
+  box-shadow: 0 18px 60px rgba(255,140,0,.18);
+}
+
+.order-title{ font-weight: 700; }
+.order-sub{ line-height: 1.2; }
+
+.order-body{
+  display:none;
+  margin-top: 10px;
+}
+.order-card.is-active .order-body{ display:block; }
+
+/* =========================
+   ORANGE GLASS DOT
+   ========================= */
+.order-dot{
+  position:absolute;
+  left: 14px;
+  top: 18px;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 2px solid rgba(255,140,0,.45);
+  background: rgba(255,140,0,.14);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow:
+    0 10px 25px rgba(0,0,0,.18),
+    inset 0 0 0 1px rgba(255,255,255,.35);
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease;
+}
+
+.order-dot:hover{
+  transform: translateY(-1px);
+  background: rgba(255,140,0,.18);
+  border-color: rgba(255,140,0,.60);
+}
+
+.order-card.is-active .order-dot{
+  border-color: rgba(255,140,0,.92);
+  background: rgba(255,140,0,.32);
+  box-shadow:
+    0 18px 42px rgba(255,140,0,.16),
+    0 0 0 .35rem rgba(255,140,0,.12),
+    inset 0 0 0 1px rgba(255,255,255,.70);
+}
+
+.order-card.is-active .order-dot::after{
+  content:"";
+  position:absolute;
+  inset: 6px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.65);
+  box-shadow: 0 0 18px rgba(255,140,0,.30);
+}
+
+/* =========================
+   LIGHT MODE DOT FIX
+   ========================= */
+html.theme-light .order-dot,
+body.theme-light .order-dot{
+  border-color: rgba(255,140,0,.55);
+  background: rgba(255,140,0,.16);
+  box-shadow:
+    0 12px 28px rgba(20,25,35,.10),
+    0 0 0 .28rem rgba(255,140,0,.10),
+    inset 0 0 0 1px rgba(255,255,255,.65);
+}
+
+html.theme-light .order-card.is-active .order-dot,
+body.theme-light .order-card.is-active .order-dot{
+  border-color: rgba(255,140,0,.95);
+  background: rgba(255,140,0,.34);
+  box-shadow:
+    0 20px 46px rgba(255,140,0,.18),
+    0 0 0 .4rem rgba(255,140,0,.14),
+    inset 0 0 0 1px rgba(255,255,255,.75);
+}
+/* =========================
+   ORDENES — LOOK TIPO RECETA
+   ========================= */
+
+/* Encabezado: un poquito más “hoja” */
+.order-hero{
+  position: relative;
+  overflow: hidden;
+}
+.order-hero::after{
+  content:"";
+  position:absolute;
+  inset:-40px;
+  background:
+    radial-gradient(380px 220px at 15% 40%, rgba(255,140,0,.10), transparent 60%),
+    radial-gradient(380px 220px at 85% 30%, rgba(13,110,253,.10), transparent 60%);
+  pointer-events:none;
+}
+
+/* Hoja / Form layout */
+.order-sheet{
+  position: relative;
+}
+.order-sheet::before{
+  content:"";
+  position:absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.04), transparent 40%),
+    radial-gradient(800px 500px at 50% 0%, rgba(255,255,255,.06), transparent 60%);
+  pointer-events:none;
+  border-radius: 18px;
+}
+
+/* Grid principal (Paciente | Referido por) */
+.order-sheet-grid{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  position: relative;
+  z-index: 1;
+}
+@media (min-width: 992px){
+  .order-sheet-grid{
+    grid-template-columns: 1.7fr 1fr; /* similar a un formato real */
+    gap: 16px;
+    align-items: start;
+  }
+}
+
+.order-block{
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.04);
+  padding: 14px;
+}
+html.theme-light .order-block,
+body.theme-light .order-block{
+  background: rgba(255,255,255,.55);
+  border-color: rgba(0,0,0,.08);
+}
+
+.order-block--side{
+  background: rgba(255,255,255,.05);
+}
+html.theme-light .order-block--side,
+body.theme-light .order-block--side{
+  background: rgba(255,255,255,.70);
+}
+
+.order-block-title{
+  font-weight: 800;
+  letter-spacing: .2px;
+  margin-bottom: 10px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+
+/* Grid interno de inputs (2 columnas, como formato) */
+.order-form-grid{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+@media (min-width: 576px){
+  .order-form-grid{
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.order-form-grid--side{
+  grid-template-columns: 1fr 1fr;
+}
+.order-field--full{
+  grid-column: 1 / -1;
+}
+
+/* Inputs un poco más “paper-like” */
+.form-glass{
+  height: 44px;
+}
+
+/* =========================
+   CARDS de estudios (simetría)
+   ========================= */
+.order-card{
+  display:flex;
+  flex-direction: column;
+  min-height: 92px;
+}
+.order-head{
+  padding-right: 4px;
+}
+.order-body{
+  margin-top: 12px;
+}
+
+/* Mantener iguales alturas visuales */
+@media (min-width: 992px){
+  .order-card{
+    min-height: 110px;
+  }
+}
+
+/* Opciones: que se vean más “hoja” */
+.opt{
+  background: rgba(255,255,255,.05);
+  border-radius: 10%;
+}
+html.theme-light .opt,
+body.theme-light .opt{
+  background: rgba(255,255,255,.72);
+  border-color: rgba(0,0,0,.10);
+}
+
+/* Ajuste fino para que no se sienta “aplastado” en móvil */
+@media (max-width: 576px){
+  .order-sheet,
+  .order-hero{
+    padding: 16px !important;
+  }
+}
+
+/* =========================
+   ORDER BOOK (flip hoja)
+   ========================= */
+.order-book-wrap{
+  perspective: 1400px;
+}
+
+.order-book{
+  position: relative;
+  width: 100%;
+  min-height: 520px;
+  transform-style: preserve-3d;
+  transition: transform .75s cubic-bezier(.2,.85,.2,1);
+}
+
+/* Flip state */
+.order-book.is-flipped{
+  transform: rotateY(180deg);
+}
+
+/* Faces */
+.order-face{
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 22px;
+  overflow: hidden;
+}
+
+/* Front stays normal */
+.order-front{
+  transform: rotateY(0deg);
+}
+
+/* Back rotated */
+.order-back{
+  transform: rotateY(180deg);
+}
+
+/* Sombra + “borde hoja” */
+.order-face::before{
+  content:"";
+  position:absolute;
+  inset: 0;
+  pointer-events:none;
+  border-radius: 22px;
+  box-shadow:
+    0 24px 70px rgba(0,0,0,.18),
+    inset 0 1px 0 rgba(255,255,255,.25);
+}
+
+/* Lomo / borde de hoja (se ve elegante) */
+.order-face::after{
+  content:"";
+  position:absolute;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  right: -1px;
+  background: linear-gradient(180deg,
+    rgba(255,255,255,.20),
+    rgba(255,255,255,.06),
+    rgba(0,0,0,.06)
+  );
+  opacity: .55;
+}
+
+/* En flip invertimos el borde para que parezca real */
+.order-book.is-flipped .order-face::after{
+  left: -1px;
+  right: auto;
+}
+
+/* Mobile: que no “corte” el contenido */
+@media (max-width: 768px){
+  .order-book{
+    min-height: 720px;
+  }
+}
+
+/* =========================
+   BACK (layout base)
+   ========================= */
+.back-grid{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+@media (min-width: 992px){
+  .back-grid{
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Cards del reverso */
+.back-card{
+  border-radius: 18px;
+  border: 1px solid var(--stroke);
+  background: rgba(255,255,255,.06);
+  padding: 14px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+html.theme-light .back-card,
+body.theme-light .back-card{
+  background: rgba(255,255,255,.68);
+}
+
+.back-title{
+  font-weight: 800;
+  letter-spacing: .2px;
+  margin-bottom: 8px;
+}
+
+.back-row{
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 10px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.back-field{
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.back-line{
+  height: 34px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(255,255,255,.05);
+}
+
+html.theme-light .back-line,
+body.theme-light .back-line{
+  border-color: rgba(0,0,0,.10);
+  background: rgba(255,255,255,.80);
+}
+
+.back-mini{
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* Mejor en móvil */
+@media (max-width: 576px){
+  .back-row{ grid-template-columns: 1fr; }
+  .back-line{ height: 38px; }
+}
+
+/* Header: glass + extensión pegada */
+.order-header-glass{
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: stretch;
+  gap: 0;
+}
+
+.order-header-main.glass{
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  padding: 16px 18px;
+}
+
+.order-header-flipbtn{
+  border: 1px solid var(--stroke);
+  background: linear-gradient(180deg, var(--card2), var(--card));
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
+  border-left: 0;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-top-right-radius: 18px;
+  border-bottom-right-radius: 18px;
+
+  width: 54px;
+  display: grid;
+  place-items: center;
+  color: var(--text);
+  cursor: pointer;
+}
+.order-header-flipbtn:hover{
+  transform: translateY(-1px);
+}
+
+/* evita el "mocho" */
+.order-book{ position: relative; }
+.order-face{ width: 100%; }
+.order-front{ position: relative; }
+.order-back{ position: absolute; inset: 0; }
+
+/* superficie interna para controlar padding/altura */
+.order-surface{ width: 100%; }
+
+.order-book-wrap{
+  /* evita cortes raros si hay transforms */
+  overflow: visible;
+}
+
+/* escenario con perspectiva */
+.order-book-stage{
+  perspective: 1400px;
+  perspective-origin: 50% 20%;
+}
+
+/* el "libro" que gira */
+.order-book{
+  position: relative;
+  transform-style: preserve-3d;
+}
+
+/* este es el que rotamos */
+.order-book-inner{
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform .75s cubic-bezier(.2,.8,.2,1);
+  will-change: transform;
+}
+
+/* cuando está volteado */
+.order-book.is-flipped .order-book-inner{
+  transform: rotateY(180deg);
+}
+
+/* caras */
+.order-face{
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  /* IMPORTANTE: que el alto lo dicte el contenido del surface */
+  min-height: 100%;
+  transform-style: preserve-3d;
+
+  /* ESTO ES LO QUE TE FALTABA 👇 */
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* FRONT sin rotación */
+.order-front{
+  transform: rotateY(0deg);
+  z-index: 2;
+}
+
+/* BACK rotado 180 para que al girar se lea normal */
+.order-back{
+  transform: rotateY(180deg);
+  z-index: 1;
+}
+
+/* El contenido real (glass) sí debe crecer en altura */
+.order-surface{
+  position: relative;
+  min-height: 100%;
+}
+
+/* Para que no puedas clicar la cara de atrás cuando está al frente */
+.order-book:not(.is-flipped) .order-back{
+  pointer-events: none;
+}
+.order-book.is-flipped .order-front{
+  pointer-events: none;
+}
+/* evita el "mocho" */
+.order-book{ position: relative; }
+.order-face{ width: 100%; }
+.order-front{ position: relative; }
+.order-back{ position: absolute; inset: 0; }
+
+.order-header-flipbtn i{
+  font-size: 18px;
+  transition: transform .25s ease;
+}
+
+.order-header-flipbtn:hover i{
+  transform: rotate(180deg);
+}
+
+.ct-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* CT cards con "interior blanco" para simular PNG transparente */
+.ct-card{
+  position: relative;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  width:100%;
+  padding:10px;
+  border-radius: 16px;
+  border: 2px solid rgba(255,255,255,.16);
+  background: rgba(255,255,255,.04);
+  color: var(--text);
+  text-align:left;
+  cursor:pointer;
+  transition: transform .12s ease, border-color .2s ease, background .2s ease;
+  overflow: hidden;
+}
+
+/* Hover: SOLO borde naranja (sin cambiar el fondo) */
+.ct-card:hover{
+  transform: translateY(-1px);
+  border-color: rgba(255,140,0,.85);
+}
+
+/* Activo: borde naranja más fuerte */
+.ct-card.is-active{
+  border-color: rgba(255,140,0,.95);
+}
+
+/* “Canvas blanco” detrás de la imagen para tapar el fondo blanco del JPG/PNG */
+.ct-imgwrap{
+  width: 64px;
+  height: 54px;
+  border-radius: 12px;
+  background: #fff;              /* <- magia: tapa el fondo feo */
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  flex: 0 0 auto;
+}
+
+/* La imagen se queda limpia encima del canvas */
+.ct-img{
+  width: 58px;
+  height: 48px;
+  object-fit: contain;
+  display:block;
+  background: transparent;       /* por si acaso */
+}
+
+/* Texto */
+.ct-size{ font-weight: 800; line-height:1; }
+
+
+.teeth-rl{
+  display:flex;
+  justify-content: space-between;
+  align-items:center;
+  margin: 6px 2px 10px;
+  font-weight: 900;
+  letter-spacing: .5px;
+}
+
+.teeth-r{ color: #ff3b30; } /* rojo tipo tu formato */
+.teeth-l{ color: #ff3b30; }
+
+/* =========================
+   ODONTOGRAMA (Dientes-botón)
+   ========================= */
+
+/* =========================
+   FIX: variable faltante
+   ========================= */
+:root{
+  --bg2: rgba(255,255,255,.06); /* usado en topfb-inner */
+}
+
+/* =========================
+   TOPFB inner FIX
+   ========================= */
+.topfb-inner{
+  background: color-mix(in srgb, var(--bg2) 70%, transparent);
+  border: 1px solid var(--topBorder);
+}
+
+/* =========================
+   CT GRID + CT CARDS
+   ========================= */
+.ct-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.ct-card{
+  position: relative;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  width:100%;
+  padding:10px;
+  border-radius: 16px;
+  border: 2px solid rgba(255,255,255,.16);
+  background: rgba(255,255,255,.04);
+  color: var(--text);
+  text-align:left;
+  cursor:pointer;
+  transition: transform .12s ease, border-color .2s ease;
+  overflow: hidden;
+}
+
+.ct-card:hover{
+  transform: translateY(-1px);
+  border-color: rgba(255,140,0,.85);
+}
+
+.ct-card.is-active{
+  border-color: rgba(255,140,0,.95);
+}
+
+/* “Canvas blanco” detrás de la imagen (para tapar fondo blanco feo) */
+.ct-imgwrap{
+  width: 64px;
+  height: 54px;
+  border-radius: 12px;
+  background: #fff;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  flex: 0 0 auto;
+}
+
+.ct-img{
+  width: 58px;
+  height: 48px;
+  object-fit: contain;
+  display:block;
+  background: transparent;
+}
+
+.ct-size{
+  font-weight: 800;
+  line-height:1;
+}
+
+/* =========================
+   BOTÓN FLIP (icono NO recarga)
+   Cambia el icono a flechas izq/der
+   ========================= */
+.order-header-flipbtn i{
+  font-size: 18px;
+  transition: transform .25s ease;
+}
+
+/* opcional: animación suave */
+.order-book.is-flipped ~ * .order-header-flipbtn i{ transform: none; }
+
+/* =========================
+   ODONTOGRAMA (Dientes-botón)
+   ========================= */
+
+/* Variables del diente (SIN duplicar :root grande) */
+:root{
+  --toothBg: rgba(255,255,255,.82);
+  --toothBorder: rgba(0,0,0,.12);
+  --toothText: rgba(20,25,35,.88);
+
+  --toothHoverBg: rgba(13,110,253,.08);
+  --toothHoverBorder: rgba(13,110,253,.40);
+
+  --toothActiveBg: rgba(255,140,0,.12);
+  --toothActiveBorder: rgba(255,140,0,.95);
+  --toothActiveGlow: rgba(255,140,0,.18);
+}
+
+/* Dark mode: dientes menos blancos */
+html:not(.theme-light) .tooth{
+  background: rgba(255,255,255,.14);
+  border-color: rgba(255,255,255,.16);
+  color: rgba(233,238,245,.92);
+}
+
+/* R y L */
+.teeth-rl{
+  display:flex;
+  justify-content: space-between;
+  align-items:center;
+  margin: 6px 2px 10px;
+  font-weight: 900;
+  letter-spacing: .5px;
+}
+.teeth-r, .teeth-l{ color:#ff3b30; }
+
+/* Grid */
+.teeth-grid{
+  width:100%;
+  display:grid;
+  gap:10px;
+}
+
+.teeth-row{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  flex-wrap:nowrap;
+}
+
+.tooth-mid{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width: 18px;
+  opacity:.55;
+  font-weight:800;
+}
+
+/* Botón diente */
+.tooth{
+  position: relative;
+  width: 46px;
+  height: 40px;
+  padding: 0;
+  border-radius: 14px;
+  border: 1px solid var(--toothBorder);
+  background: var(--toothBg);
+  color: var(--toothText);
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: .2px;
+
+  display:grid;
+  place-items:center;
+
+  cursor:pointer;
+  user-select:none;
+
+  transition:
+    transform .12s ease,
+    border-color .2s ease,
+    background .2s ease,
+    box-shadow .2s ease;
+}
+
+/* Brillito */
+.tooth::before{
+  content:"";
+  position:absolute;
+  inset: 1px 2px auto 2px;
+  height: 40%;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,0));
+  pointer-events:none;
+  opacity:.75;
+}
+
+/* Sombra interna */
+.tooth::after{
+  content:"";
+  position:absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 -10px 16px rgba(0,0,0,.06),
+    inset 0 1px 0 rgba(255,255,255,.25);
+  pointer-events:none;
+}
+
+.tooth:hover{
+  transform: translateY(-1px);
+  border-color: var(--toothHoverBorder);
+  background: var(--toothHoverBg);
+}
+
+.tooth.is-active{
+  border-color: var(--toothActiveBorder) !important;
+  background: var(--toothActiveBg) !important;
+  box-shadow:
+    0 0 0 .28rem var(--toothActiveGlow),
+    0 12px 26px rgba(255,140,0,.10);
+}
+
+/* Focus teclado */
+.tooth:focus-visible{
+  outline: none;
+  box-shadow: 0 0 0 .28rem rgba(13,110,253,.20);
+}
+
+/* Formas por tipo (según último dígito: 1..8) */
+.tooth[data-tooth$="1"],
+.tooth[data-tooth$="2"]{
+  width: 40px;
+  height: 38px;
+  border-radius: 16px 16px 14px 14px;
+}
+
+.tooth[data-tooth$="3"]{
+  width: 42px;
+  height: 40px;
+  border-radius: 16px 16px 14px 14px;
+  clip-path: polygon(18% 0%, 82% 0%, 100% 24%, 92% 100%, 8% 100%, 0% 24%);
+}
+
+.tooth[data-tooth$="4"],
+.tooth[data-tooth$="5"]{
+  width: 46px;
+  height: 40px;
+  border-radius: 16px;
+}
+
+.tooth[data-tooth$="6"],
+.tooth[data-tooth$="7"],
+.tooth[data-tooth$="8"]{
+  width: 52px;
+  height: 42px;
+  border-radius: 16px 16px 18px 18px;
+}
+
+/* Responsive */
+@media (max-width: 520px){
+  .tooth{ width: 40px; height: 36px; font-size: 11px; }
+  .tooth[data-tooth$="6"],
+  .tooth[data-tooth$="7"],
+  .tooth[data-tooth$="8"]{ width: 46px; height: 38px; }
+}
+
+/* =========================
+   BACK FORMATO (como tu imagen)
+   ========================= */
+
+/* =========================
+   BACK — Layout estilo formato (pero glass)
+   ========================= */
+
+.back-grid.back-format{
+  display:grid;
+  grid-template-columns: 1fr minmax(420px, 520px) 1fr; /* centro flexible */
+  gap: 14px;
+  align-items:start;
+}
+
+/* Asegura que las cards no se “encojen” raro */
+.back-card{
+  min-width: 0;
+}
+
+/* Fila superior: 3 cajas */
+.back-ct-left{ grid-column:1; grid-row:1; }
+.back-ct-center{ grid-column:2; grid-row:1; }
+.back-ct-right{ grid-column:3; grid-row:1; }
+
+/* Fila media */
+.back-wide-left{ grid-column:1; grid-row:2; }
+.back-zone-title{ grid-column:2; grid-row:2; }
+.back-wide-right{ grid-column:3; grid-row:2; }
+
+/* Odontograma centrado */
+.back-odontogram{ grid-column:2; grid-row:3; }
+
+/* Indicaciones full */
+.back-indications{ grid-column:1 / -1; grid-row:4; }
+
+/* =========================
+   Glass look (más limpio)
+   ========================= */
+.order-back.glass{
+  border-radius: 22px;
+}
+
+.back-card{
+  border-radius: 18px;
+  border: 1px solid var(--stroke);
+  background: linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,.35));
+  box-shadow: 0 18px 45px rgba(20,25,35,.10);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: 14px;
+}
+
+html:not(.theme-light) .back-card{
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+  box-shadow: 0 18px 45px rgba(0,0,0,.25);
+}
+
+/* Titulitos */
+.back-title{ font-weight: 900; letter-spacing:.2px; margin-bottom:10px; }
+
+/* Encabezado mini de CT */
+.back-ct-head{
+  display:flex;
+  justify-content: space-between;
+  align-items:center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.back-ct-title{ font-weight: 900; }
+.back-ct-sub{ opacity:.75; white-space: nowrap; }
+
+/* Cápsula centro */
+.back-zone-title{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  font-weight: 900;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 10px 14px;
+  border: 1px solid rgba(34,197,94,.55);
+  background: rgba(255,255,255,.55);
+}
+html:not(.theme-light) .back-zone-title{
+  background: rgba(255,255,255,.06);
+}
+
+/* =========================
+   CT Cards: compactas y bonitas
+   ========================= */
+.ct-card{
+  display:flex;
+  align-items:center;
+  gap: 12px;
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(255,255,255,.10);
+  padding: 12px;
+  text-align:left;
+  cursor:pointer;
+  transition: transform .12s ease, border-color .2s ease, background .2s ease, box-shadow .2s ease;
+}
+html.theme-light .ct-card{
+  background: rgba(255,255,255,.72);
+  border-color: rgba(0,0,0,.08);
+}
+
+.ct-card:hover{
+  transform: translateY(-1px);
+  border-color: rgba(255,140,0,.80);
+  box-shadow: 0 14px 30px rgba(255,140,0,.10);
+}
+.ct-card.is-active{
+  border-color: rgba(255,140,0,.95);
+  box-shadow: 0 0 0 .28rem rgba(255,140,0,.14);
+}
+
+/* Imagen: “canvas blanco” para ocultar fondo feo */
+.ct-img{
+  width: 62px;
+  height: 52px;
+  object-fit: contain;
+  background:#fff;
+  border-radius: 12px;
+  padding: 6px;
+  flex: 0 0 auto;
+}
+
+.ct-size{ font-weight: 900; line-height: 1.1; }
+.ct-sub{ line-height: 1.1; }
+
+/* =========================
+   Odontograma: que NO se salga
+   ========================= */
+.back-odontogram{
+  position: relative;
+  overflow: hidden; /* evita que el grid se desborde */
+}
+
+/* Línea roja central (bonita y que llegue bien) */
+.back-odontogram::after{
+  content:"";
+  position:auto;
+  top: 70px;     /* ajusta si quieres */
+  bottom: 9px;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background: rgba(255,59,48,.65);
+  border-radius: 999px;
+  pointer-events:none;
+}
+
+/* Grid dientes: centrado y con wrap en pantallas pequeñas */
+.teeth-grid{
+  width: 100%;
+  display: grid;
+  gap: 12px;
+}
+.teeth-row{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap: 8px;
+  flex-wrap: wrap;       
+}
+
+.tooth-mid{
+  margin: 0 6px;
+  opacity: .55;
+  font-weight: 800;
+}
+
+/* =========================
+   Indicaciones: que se vea pro
+   ========================= */
+.back-indications textarea{
+  min-height: 120px;
+  resize: vertical;
+}
+
+/* =========================
+   FIX del “corte”: que el reverso crezca
+   ========================= */
+.order-face.order-back{
+  height: auto;
+  overflow: visible;
+}
+
+/* Responsive: apila en móvil */
+@media (max-width: 992px){
+  .back-grid.back-format{ grid-template-columns: 1fr; }
+  .back-ct-left,.back-ct-center,.back-ct-right,
+  .back-wide-left,.back-zone-title,.back-wide-right,
+  .back-odontogram,.back-indications{
+    grid-column:1;
+    grid-row:auto;
+  }
+  .back-odontogram::after{ display:none; }
+}
+.order-book, .order-book-inner{
+  min-height: 820px; /* súbelo si tu reverso es más largo */
+}
+
+.back-odontogram::after{
+  top: 56px;    /* antes 70px */
+  bottom: 16px;
+}
+
+.back-grid{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+@media (min-width: 992px){
+  .back-grid{
+    grid-template-columns: 1.05fr 1.6fr 1.05fr; /* centro más ancho */
+    column-gap: 18px;
+    row-gap: 14px;
+    align-items: start;
+  }
+}
+
+/* Cards del back (tus back-card) */
+.back-card{
+  border-radius: 18px;
+  border: 1px solid var(--stroke);
+  background: rgba(255,255,255,.06);
+  padding: 10px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+html.theme-light .back-card,
+body.theme-light .back-card{
+  background: rgba(255,255,255,.68);
+}
+
+
+
+@media (min-width: 992px){
+  .back-ct-a{ grid-column: 1; grid-row: 1; }
+  .back-ct-b{ grid-column: 2; grid-row: 1; }
+  .back-ct-c{ grid-column: 3; grid-row: 1; }
+
+  .back-ct-d{ grid-column: 1; grid-row: 2; }
+  .back-zone-title{ grid-column: 2; grid-row: 2; align-self: start; }
+  .back-ct-e{ grid-column: 3; grid-row: 2; }
+
+  /* 🔥 aquí está la magia: odontograma “sube” al hueco del centro */
+  .back-odontogram{
+    grid-column: 2;
+    grid-row: 3;
+    margin-top: -155px;     /* súbelo al hueco */
+  }
+}
+
+/* Ajuste fino para que quede “casi pegado” */
+.back-zone-title{
+  padding: 10px 14px;
+  border-radius: 999px;
+}
+
+/* En pantallas medianas: menos subida */
+@media (max-width: 1200px) and (min-width: 992px){
+  .back-odontogram{ margin-top: -90px; }
+}
+
+/* En mobile no lo subimos */
+@media (max-width: 991.98px){
+  .back-odontogram{ margin-top: 0; }
+}
+.order-face.order-back.glass.p-4{
+  padding: 18px !important; /* reduce p-4 */
+}
+
+.modal { z-index: 20000; }
+.modal-backdrop { z-index: 19990; }
+:root{
+  --bg:#0b0f14;
+  --bg2: rgba(255,255,255,.06);
+
+  --text: rgba(233,238,245,.92);
+  --muted: rgba(233,238,245,.70);
+
+  --card: rgba(255,255,255,.06);
+  --card2: rgba(255,255,255,.08);
+  --stroke: rgba(255,255,255,.12);
+
+  --primary: rgba(13,110,253,.92);
+  --primaryGlow: rgba(13,110,253,.20);
+
+  --shadow: 0 18px 45px rgba(0,0,0,.40);
+
+  --topBg: rgba(11,15,20,.55);
+  --topBorder: rgba(255,255,255,.10);
+
+  --scrollThumb: rgba(255,255,255,.14);
+  --scrollTrack: rgba(255,255,255,.05);
+}
+
+html.theme-light,
+body.theme-light{
+  --bg:#f3f6ff;
+  --text: rgba(18,22,30,.92);
+  --muted: rgba(18,22,30,.62);
+
+  --card: rgba(255,255,255,.62);
+  --card2: rgba(255,255,255,.82);
+  --stroke: rgba(20,25,35,.10);
+
+  --shadow: 0 22px 50px rgba(20,25,35,.12);
+
+  --topBg: rgba(255,255,255,.72);
+  --topBorder: rgba(20,25,35,.10);
+
+  --scrollThumb: rgba(0,0,0,.18);
+  --scrollTrack: rgba(0,0,0,.06);
+}
+
+*{ box-sizing:border-box; }
+html, body{ height:100%; }
+
+body{
+  background:
+    radial-gradient(1200px 600px at 12% 8%, rgba(120,140,255,.22), transparent 58%),
+    radial-gradient(900px 520px at 92% 10%, rgba(0,255,200,.10), transparent 52%),
+    radial-gradient(900px 520px at 55% 95%, rgba(255,120,200,.08), transparent 55%),
+    var(--bg);
+  color: var(--text);
+  font-family: "Century Gothic", "Segoe UI", Tahoma, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.muted{ color: var(--muted); }
+
+.cardx,
+.glass{
+  background: linear-gradient(180deg, var(--card2), var(--card));
+  border: 1px solid var(--stroke);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.btn-soft{
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.14);
+  color: var(--text);
+  border-radius: 14px;
+}
+.btn-soft:hover{
+  background: rgba(255,255,255,.12);
+  border-color: rgba(255,255,255,.20);
+}
+
+.form-control, .form-select{
+  background: rgba(255,255,255,.06) !important;
+  border: 1px solid rgba(0, 0, 0, 0.534) !important;
+  color: rgba(0, 0, 0, 0.92)  !important;
+  border-radius: 14px;
+}
+.form-control:focus, .form-select:focus{
+  background: rgba(255,255,255,.08) !important;
+  border-color: rgba(13,110,253,.60) !important;
+  box-shadow: 0 0 0 .22rem var(--primaryGlow) !important;
+}
+
+/* =========================
+   ORDER HEADER (Flip button pegado)
+   ========================= */
+.order-header-glass{
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: stretch;
+  gap: 0;
+}
+.order-header-main.glass{
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  padding: 16px 18px;
+}
+.order-header-flipbtn{
+  border: 1px solid var(--stroke);
+  background: linear-gradient(180deg, var(--card2), var(--card));
+  box-shadow: var(--shadow);
+  border-left: 0;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-top-right-radius: 18px;
+  border-bottom-right-radius: 18px;
+  width: 54px;
+  display: grid;
+  place-items: center;
+  color: var(--text);
+  cursor: pointer;
+}
+.order-header-flipbtn i{
+  font-size: 18px;
+}
+
+/* =========================
+   ORDER GRID (cards estudios)
+   ========================= */
+.order-grid{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+@media (min-width: 992px){
+  .order-grid{ grid-template-columns: 1fr 1fr; }
+}
+
+.order-card{
+  position: relative;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  box-shadow: 0 12px 40px rgba(0,0,0,.20);
+  padding: 14px 14px 14px 54px;
+  overflow: hidden;
+}
+.order-card.is-active{
+  border-color: rgba(255,140,0,.65);
+  box-shadow: 0 18px 60px rgba(255,140,0,.18);
+}
+
+.order-dot{
+  position:absolute;
+  left: 14px;
+  top: 18px;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 2px solid rgba(255,140,0,.45);
+  background: rgba(255,140,0,.14);
+  box-shadow:
+    0 10px 25px rgba(0,0,0,.18),
+    inset 0 0 0 1px rgba(255,255,255,.35);
+  cursor: pointer;
+}
+.order-card.is-active .order-dot{
+  border-color: rgba(255,140,0,.92);
+  background: rgba(255,140,0,.32);
+}
+.order-card.is-active .order-dot::after{
+  content:"";
+  position:absolute;
+  inset: 6px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.65);
+}
+
+.order-title{ font-weight: 800; }
+.order-sub{ line-height: 1.2; }
+
+.order-body{
+  display:none;
+  margin-top: 12px;
+}
+.order-card.is-active .order-body{ display:block; }
+
+.opt{
+  display:inline-flex;
+  align-items:center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.05);
+}
+
+/* =========================
+   ORDER BOOK (Flip)
+   ========================= */
+.order-book-wrap{
+  perspective: 1400px;
+  perspective-origin: 50% 20%;
+}
+
+.order-book{
+  position: relative;
+  width: 100%;
+}
+
+/* Este es el que gira */
+.order-book-inner{
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform .75s cubic-bezier(.2,.8,.2,1);
+  will-change: transform;
+}
+
+.order-book.is-flipped .order-book-inner{
+  transform: rotateY(180deg);
+}
+
+/* Caras */
+.order-face{
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 22px;
+  overflow: hidden;
+}
+
+.order-front{ transform: rotateY(0deg); z-index: 2; }
+.order-back{ transform: rotateY(180deg); z-index: 1; }
+
+/* Bloquea clicks en la cara escondida */
+.order-book:not(.is-flipped) .order-back{ pointer-events:none; }
+.order-book.is-flipped .order-front{ pointer-events:none; }
+
+/* =========================
+   BACK GRID (reverso)
+   ========================= */
+.back-grid{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+@media (min-width: 992px){
+  .back-grid.back-format{
+    grid-template-columns: 1.05fr 1.6fr 1.05fr;
+    column-gap: 18px;
+    row-gap: 14px;
+    align-items: start;
+  }
+}
+
+.back-card{
+  border-radius: 18px;
+  border: 1px solid var(--stroke);
+  background: rgba(255,255,255,.06);
+  padding: 12px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  min-width: 0;
+}
+html.theme-light .back-card,
+body.theme-light .back-card{
+  background: rgba(255,255,255,.68);
+}
+
+.back-ct-head{
+  display:flex;
+  justify-content: space-between;
+  align-items:center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.back-ct-title{ font-weight: 900; }
+.back-ct-sub{ opacity:.75; white-space: nowrap; }
+
+.back-zone-title{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  font-weight: 900;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 10px 14px;
+  border: 1px solid rgba(34,197,94,.55);
+  background: rgba(255,255,255,.55);
+}
+html:not(.theme-light) .back-zone-title{
+  background: rgba(255,255,255,.06);
+}
+
+/* =========================
+   CT cards
+   ========================= */
+.ct-card{
+  display:flex;
+  align-items:center;
+  gap: 12px;
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(255,255,255,.10);
+  padding: 12px;
+  text-align:left;
+  cursor:pointer;
+  transition: transform .12s ease, border-color .2s ease, box-shadow .2s ease;
+}
+html.theme-light .ct-card{
+  background: rgba(255,255,255,.72);
+  border-color: rgba(0,0,0,.08);
+}
+.ct-card:hover{
+  transform: translateY(-1px);
+  border-color: rgba(255,140,0,.80);
+  box-shadow: 0 14px 30px rgba(255,140,0,.10);
+}
+.ct-card.is-active{
+  border-color: rgba(255,140,0,.95);
+  box-shadow: 0 0 0 .28rem rgba(255,140,0,.14);
+}
+
+.ct-img{
+  width: 62px;
+  height: 52px;
+  object-fit: contain;
+  background:#fff;
+  border-radius: 12px;
+  padding: 6px;
+  flex: 0 0 auto;
+}
+
+.ct-size{ font-weight: 900; line-height: 1.1; }
+.ct-sub{ line-height: 1.1; }
+
+/* =========================
+   ODONTOGRAMA
+   ========================= */
+.teeth-rl{
+  display:flex;
+  justify-content: space-between;
+  align-items:center;
+  margin: 6px 2px 10px;
+  font-weight: 900;
+  letter-spacing: .5px;
+}
+.teeth-r, .teeth-l{ color:#ff3b30; }
+
+.teeth-grid{
+  width: 100%;
+  display: grid;
+  gap: 12px;
+}
+.teeth-row{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tooth{
+  width: 46px;
+  height: 40px;
+  padding: 0;
+  border-radius: 14px;
+  border: 1px solid rgba(0,0,0,.12);
+  background: rgba(255,255,255,.82);
+  color: rgba(20,25,35,.88);
+  font-weight: 800;
+  font-size: 12px;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  user-select:none;
+  transition: transform .12s ease, border-color .2s ease, background .2s ease, box-shadow .2s ease;
+}
+html:not(.theme-light) .tooth{
+  background: rgba(255,255,255,.14);
+  border-color: rgba(255,255,255,.16);
+  color: rgba(233,238,245,.92);
+}
+
+.tooth:hover{
+  transform: translateY(-1px);
+  border-color: rgba(13,110,253,.40);
+  background: rgba(13,110,253,.08);
+}
+
+.tooth.is-active{
+  border-color: rgba(255,140,0,.95) !important;
+  background: rgba(255,140,0,.12) !important;
+  box-shadow: 0 0 0 .28rem rgba(255,140,0,.18);
+}
+
+/* =========================
+   Alerts y Modal stacking
+   ========================= */
+#orderMsg, #orderErr{
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  width: min(420px, calc(100vw - 32px));
+  z-index: 1040;
+  margin: 0;
+}
+
+.modal{ z-index: 20000; }
+.modal-backdrop{ z-index: 19990; }
+
+/* =========================
+   DASHBOARD — GLASS AURA LEGIBLE
+   PÉGALO AL FINAL DE TU CSS
+   ========================= */
+
+/* 1) Variables: más luz y mejor contraste */
+:root{
+  --txt: rgba(233,238,245,.95);
+  --muted: rgba(233,238,245,.72);
+  --muted2: rgba(233,238,245,.55);
+
+  /* vidrio más visible */
+  --glass: rgba(255,255,255,.08);
+  --glass2: rgba(255,255,255,.12);
+  --stroke: rgba(255,255,255,.16);
+
+  /* sombras menos negras */
+  --shadow: 0 20px 55px rgba(0,0,0,.35);
+  --shadow2: 0 12px 32px rgba(0,0,0,.22);
+
+  /* glow suave */
+  --auraA: rgba(120,140,255,.22);
+  --auraB: rgba(190,80,255,.18);
+  --auraC: rgba(0,255,200,.12);
+}
+
+/* 2) Fondo aurora más “premium” (sin oscurecer tanto) */
+.dash-body{
+  color: var(--txt) !important;
+  background:
+    radial-gradient(1200px 720px at 18% 12%, var(--auraA), transparent 62%),
+    radial-gradient(980px 640px  at 86% 22%, var(--auraB), transparent 58%),
+    radial-gradient(980px 760px  at 52% 92%, var(--auraC), transparent 62%),
+    linear-gradient(180deg, var(--bg1), var(--bg2));
+}
+
+/* 3) Cards glass con borde doble + brillo */
+.cardx, .glass{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.12), rgba(0, 0, 0, 0.596)) !important;
+  border: 1px solid rgba(255,255,255,.16) !important;
+  box-shadow: var(--shadow2) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  position: relative;
+}
+
+/* borde interior tipo iOS */
+.cardx::before, .glass::before{
+  content:"";
+  position:absolute;
+  inset: 1px;
+  border-radius: inherit;
+  border: 1px solid rgba(255,255,255,.10);
+  pointer-events:none;
+}
+
+/* brillo superior */
+.cardx::after, .glass::after{
+  content:"";
+  position:absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255,255,255,.10), transparent 55%);
+  pointer-events:none;
+  opacity: .75;
+}
+
+/* 4) Título de bienvenida (tu barra grande de arriba) */
+#docWelcomeTitle,
+.welcome-center,
+.welcome-center *{
+  color: var(--txt) !important;
+  text-shadow: 0 10px 30px rgba(0,0,0,.35);
+}
+
+/* 5) KPIs: que se vean como tu screenshot (más claros adentro) */
+.kpibox{
+  background: rgba(255,255,255,.07) !important;
+  border: 1px solid rgba(255,255,255,.14) !important;
+  box-shadow: 0 16px 40px rgba(0,0,0,.18) !important;
+}
+.kpibox:hover{
+  background: rgba(255,255,255,.10) !important;
+}
+.kpi-value{
+  color: var(--txt) !important;
+  font-weight: 900;
+}
+.kpi-head,
+.kpibox .muted{
+  color: var(--muted) !important;
+}
+
+/* 6) Texto muted general (ya no negro raro) */
+.muted{
+  color: var(--muted) !important;
+}
+
+/* 7) Inputs/filters en dashboard (legibles sin volverse blancos) */
+.form-control, .form-select, .form-glass{
+  background: rgba(255,255,255,.08) !important;
+  border: 1px solid rgba(255,255,255,.16) !important;
+  color: var(--txt) !important;
+}
+.form-control::placeholder,
+.form-glass::placeholder{
+  color: var(--muted2) !important;
+}
+.form-control:focus, .form-select:focus, .form-glass:focus{
+  border-color: rgba(13,110,253,.55) !important;
+  box-shadow: 0 0 0 .28rem rgba(13,110,253,.18) !important;
+  background: rgba(255,255,255,.10) !important;
+}
+
+/* 8) Topbar tabs: activo siempre se ve como “hover estático” */
+.topfb-tab{
+  color: var(--muted) !important;
+}
+.topfb-tab.active{
+  background: rgba(255,255,255,.10) !important;
+  border-color: rgba(255,255,255,.16) !important;
+  box-shadow: 0 0 0 .30rem rgba(13,110,253,.14) !important;
+  color: var(--txt) !important;
+}
+
+/* 9) Reduce lo “negro” de sombras en pantallas oscuras */
+.topfb-inner{
+  box-shadow: 0 18px 50px rgba(0,0,0,.28) !important;
+}
+/* =========================
+   THEME TOKENS (SOLO 1 VEZ)
+   ========================= */
+:root{
+  /* Base dark */
+  --bg:#0b0f14;
+  --bg2:#0b1020; /* para top/aurora */
+
+  --text: rgba(233,238,245,.92);
+  --muted: rgba(233,238,245,.70);
+  --muted2: rgba(233,238,245,.55);
+
+  --stroke: rgba(255,255,255,.14);
+
+  --primary: rgba(13,110,253,.92);
+  --primaryGlow: rgba(13,110,253,.20);
+
+  --shadow: 0 18px 45px rgba(0,0,0,.40);
+  --shadow2: 0 12px 32px rgba(0,0,0,.22);
+
+  /* ✅ Cards (TU COLOR SOLO PARA DARK) */
+  --cardGrad: linear-gradient(180deg, rgba(255,255,255,.12), rgba(0,0,0,.60));
+
+  /* Top glass */
+  --topBg: rgba(11,15,20,.55);
+  --topBorder: rgba(255,255,255,.10);
+
+  /* Modal */
+  --modalBg: linear-gradient(180deg, rgba(20,25,35,.98), rgba(11,15,20,.98));
+  --modalText: var(--text);
+  --modalBorder: rgba(255,255,255,.12);
+  --modalCloseInvert: 1;
+
+  /* Backdrop */
+  --backdropA: rgba(13,110,253,.18);
+  --backdropB: rgba(0,0,0,.85);
+
+  /* Aura */
+  --auraA: rgba(120,140,255,.22);
+  --auraB: rgba(190,80,255,.18);
+  --auraC: rgba(0,255,200,.12);
+
+  /* Scroll */
+  --scrollThumb: rgba(255,255,255,.14);
+  --scrollTrack: rgba(255,255,255,.05);
+}
+
+/* =========================
+   LIGHT THEME (SOLO VARIABLES)
+   ========================= */
+html.theme-light,
+body.theme-light{
+  --bg:#f3f6ff;
+  --bg2:#eef2ff;
+
+  --text: rgba(18,22,30,.92);
+  --muted: rgba(18,22,30,.62);
+  --muted2: rgba(18,22,30,.46);
+
+  --stroke: rgba(20,25,35,.10);
+
+  --shadow: 0 22px 50px rgba(20,25,35,.12);
+  --shadow2: 0 12px 30px rgba(20,25,35,.10);
+
+  /* ✅ En LIGHT NO se queda negro */
+  --cardGrad: linear-gradient(180deg, rgba(255,255,255,.88), rgba(255,255,255,.62));
+
+  --topBg: rgba(255,255,255,.72);
+  --topBorder: rgba(20,25,35,.10);
+
+  --modalBg: linear-gradient(180deg, rgba(255,255,255,.97), rgba(245,248,255,.97));
+  --modalText: rgba(20,25,35,.92);
+  --modalBorder: rgba(0,0,0,.10);
+  --modalCloseInvert: 0;
+
+  --backdropA: rgba(13,110,253,.12);
+  --backdropB: rgba(0,0,0,.45);
+
+  --scrollThumb: rgba(0,0,0,.18);
+  --scrollTrack: rgba(0,0,0,.06);
+}
+
+/* =========================
+   BASE
+   ========================= */
+*{ box-sizing:border-box; }
+html, body{ height:100%; }
+
+body{
+  background:
+    radial-gradient(1200px 600px at 12% 8%, var(--auraA), transparent 58%),
+    radial-gradient(900px 520px at 92% 10%, var(--auraC), transparent 52%),
+    radial-gradient(900px 520px at 55% 95%, rgba(255,120,200,.08), transparent 55%),
+    var(--bg);
+  color: var(--text);
+  font-family: "Century Gothic", "Segoe UI", Tahoma, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.muted{ color: var(--muted) !important; }
+
+/* =========================
+   GLASS CARDS (DARK vs LIGHT con variable)
+   ========================= */
+.cardx,
+.glass{
+  background: var(--cardGrad) !important;              /* 🔥 AQUÍ */
+  border: 1px solid rgba(255,255,255,.16) !important;
+  border-color: var(--stroke) !important;
+  border-radius: 18px;
+  box-shadow: var(--shadow2) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  position: relative;
+}
+
+/* borde interior (iOS) */
+.cardx::before,
+.glass::before{
+  content:"";
+  position:absolute;
+  inset: 1px;
+  border-radius: inherit;
+  border: 1px solid rgba(255,255,255,.10);
+  pointer-events:none;
+}
+
+/* brillo arriba */
+.cardx::after,
+.glass::after{
+  content:"";
+  position:absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255,255,255,.10), transparent 55%);
+  pointer-events:none;
+  opacity: .75;
+}
+
+/* =========================
+   TOPBAR
+   ========================= */
+.topfb-inner{
+  background: color-mix(in srgb, var(--bg2) 70%, transparent);
+  border: 1px solid var(--topBorder);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* =========================
+   INPUTS (dark legible / light normal)
+   ========================= */
+.form-control, .form-select{
+  background: rgba(255,255,255,.08) !important;
+  border: 1px solid var(--stroke) !important;
+  color: var(--text) !important;
+  border-radius: 14px;
+}
+html.theme-light .form-control,
+html.theme-light .form-select,
+body.theme-light .form-control,
+body.theme-light .form-select{
+  background: rgba(255,255,255,.85) !important;
+  border: 1px solid rgba(20,25,35,.14) !important;
+  color: rgba(20,25,35,.92) !important;
+}
+.form-control::placeholder, .form-select::placeholder{
+  color: var(--muted2) !important;
+}
+.form-control:focus, .form-select:focus{
+  border-color: rgba(13,110,253,.60) !important;
+  box-shadow: 0 0 0 .22rem var(--primaryGlow) !important;
+}
+
+/* =========================
+   ORDERS CARDS (mejor contraste)
+   ========================= */
+.order-card{
+  border: 1px solid var(--stroke);
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+}
+html.theme-light .order-card,
+body.theme-light .order-card{
+  background: rgba(255,255,255,.75);
+  color: rgba(20,25,35,.92);
+  border-color: rgba(20,25,35,.10);
+}

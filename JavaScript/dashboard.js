@@ -1,18 +1,16 @@
-/* =========================
-   DASHBOARD (DOCTORES)
-   ========================= */
+
 
 /* Unifica con Index */
 const USERS_KEY = "orline_users";
 const SESSION_KEY = "orline_session";
-const BUSINESSES_KEY = "pos_businesses"; // si tu business aún está en pos_businesses, lo dejamos
+const BUSINESSES_KEY = "pos_businesses";
 
 /* Compat: por si aún existen keys viejas */
 const LEGACY_SESSION_KEYS = ["pos_session"];
 const LEGACY_USERS_KEYS = ["pos_users"];
 
-/* Datos clínicos */
 const PATIENT_KEYS = [
+  "orline_orders",       
   "orline_patients",
   "pos_patients",
   "pos_radiology_patients",
@@ -39,7 +37,6 @@ function safeJSON(key, fallback) {
 }
 
 function getUsers() {
-  /* Primero intenta orline_users, si está vacío intenta pos_users */
   const a = safeJSON(USERS_KEY, null);
   if (Array.isArray(a)) return a;
 
@@ -50,7 +47,9 @@ function getUsers() {
   return [];
 }
 
-function getSession() { return safeJSON(SESSION_KEY, null); }
+function getSession() {
+  return safeJSON(SESSION_KEY, null) || safeJSON("pos_session", null) || null;
+}
 
 function clearSession() {
   localStorage.removeItem(SESSION_KEY);
@@ -84,7 +83,6 @@ function requireAuthOrRedirect() {
 
   const session = getSession();
 
-  /* Si Index marcó logout, no intentes “re-entrar” */
   if (sessionStorage.getItem("orline_logout") === "1") {
     sessionStorage.removeItem("orline_logout");
     clearSession();
@@ -92,19 +90,21 @@ function requireAuthOrRedirect() {
     return null;
   }
 
-  if (!session?.userId) {
+  if (!session?.userId && !session?.id) {
     redirectToIndex();
     return null;
   }
 
-  const user = getUsers().find(u => u.id === session.userId);
+  const sessionUserId = session.userId || session.id;
+
+  const user = getUsers().find(u => u.id === sessionUserId);
   if (!user) {
     clearSession();
     redirectToIndex();
     return null;
   }
 
-  const biz = getBusinessByOwner(session.userId) || null;
+  const biz = getBusinessByOwner(sessionUserId) || null;
   return { user, biz };
 }
 
@@ -205,7 +205,7 @@ function statusBadgeClass(st) {
 }
 
 /* -------------------------
-   Lectura de pacientes/estudios
+   Lectura de pacientes/estudios (✅ ahora lee órdenes nuevas)
 -------------------------- */
 function readPatientsForDoctor(ctx) {
   const hit = findArrayFromStorage(PATIENT_KEYS);
@@ -218,23 +218,61 @@ function readPatientsForDoctor(ctx) {
   const rows = hit.arr
     .filter(x => x && typeof x === "object")
     .map(x => {
+      // ✅ paciente (soporta payload.patient.name)
       const patientName =
-        x.patientName || x.paciente || x.nombrePaciente || x.patient || x.name || "";
+        x.patientName ||
+        x.paciente ||
+        x.nombrePaciente ||
+        x.patient ||
+        x.name ||
+        x.patient?.name ||
+        "";
 
+      // ✅ estudio (soporta payload.study o selections.active)
       const study =
-        x.study || x.estudio || x.studyType || x.tipoEstudio || x.type || "";
+        x.study ||
+        x.estudio ||
+        x.studyType ||
+        x.tipoEstudio ||
+        x.type ||
+        (Array.isArray(x.selections?.active) ? x.selections.active.join(" + ") : "") ||
+        "";
 
       const createdAt =
-        x.createdAt || x.date || x.fecha || x.timestamp || x.time || "";
+        x.createdAt ||
+        x.date ||
+        x.fecha ||
+        x.timestamp ||
+        x.time ||
+        "";
 
+      // ✅ doctor meta (soporta session.userId y doctorEmail)
       const doctorId =
-        x.doctorId || x.medicoId || x.userId || x.ownerUserId || "";
+        x.doctorId ||
+        x.medicoId ||
+        x.userId ||
+        x.ownerUserId ||
+        x.session?.userId ||
+        x.session?.id ||
+        "";
 
       const doctorEmail =
-        normalizeStr(x.doctorEmail || x.emailDoctor || x.medicoEmail || "").toLowerCase();
+        normalizeStr(
+          x.doctorEmail ||
+          x.emailDoctor ||
+          x.medicoEmail ||
+          x.session?.email ||
+          ""
+        ).toLowerCase();
 
       const recordBizId =
-        x.bizId || x.businessId || x.cabinetId || x.clinicId || "";
+        x.bizId ||
+        x.businessId ||
+        x.cabinetId ||
+        x.clinicId ||
+        x.session?.bizId ||
+        x.session?.businessId ||
+        "";
 
       const status =
         normalizeStatus(x.status || x.estado || x.stage || x.state || "pending");
@@ -249,7 +287,7 @@ function readPatientsForDoctor(ctx) {
         ymd,
         status,
         raw: x,
-        meta: { doctorId, doctorEmail, recordBizId }
+        meta: { doctorId: String(doctorId), doctorEmail: String(doctorEmail), recordBizId: String(recordBizId) }
       };
     })
     .filter(r => {
@@ -478,10 +516,8 @@ function setupLogout() {
     if (isLoggingOut) return;
     isLoggingOut = true;
 
-    /* Marca logout para que Index no auto-redirija al volver */
     sessionStorage.setItem("orline_logout", "1");
 
-    /* Cierra modal antes de navegar */
     if (modalEl && window.bootstrap?.Modal) {
       const m = bootstrap.Modal.getOrCreateInstance(modalEl);
       m.hide();
@@ -508,6 +544,13 @@ function setupLogout() {
 /* -------------------------
    INIT
 -------------------------- */
+function refreshDashboardUI() {
+  const ctx = requireAuthOrRedirect();
+  if (!ctx) return;
+  state.all = readPatientsForDoctor(ctx);
+  applyFilters();
+}
+
 function boot() {
   const ctx = requireAuthOrRedirect();
   if (!ctx) return;
@@ -524,18 +567,16 @@ function boot() {
 
 document.addEventListener("DOMContentLoaded", boot);
 
-/* Si cambia la sesión, no hagas nada aquí (evita dobles redirects) */
+window.addEventListener("orline:ordersUpdated", () => {
+  refreshDashboardUI();
+});
+
 window.addEventListener("storage", (e) => {
   if (isLoggingOut) return;
   if (!e?.key) return;
 
   if (e.key === SESSION_KEY || LEGACY_SESSION_KEYS.includes(e.key)) return;
-
   if (!PATIENT_KEYS.includes(e.key)) return;
 
-  const ctx = requireAuthOrRedirect();
-  if (!ctx) return;
-
-  state.all = readPatientsForDoctor(ctx);
-  applyFilters();
+  refreshDashboardUI();
 });

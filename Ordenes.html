@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ORLINE — Crear orden</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+  <link rel="stylesheet" href="Estilos/dashboard.css">
+  <link rel="stylesheet" href="Estilos/ordenes.css">
+    <link rel="shortcut icon" href="Multimedia/icono.ico" type="image/x-icon">
+
+</head>
+
+<body class="dash-body">
+
+  <!-- TOPFB -->
+  <header class="topfb d-none d-lg-block">
+    <div class="topfb-inner">
+      <div class="topfb-left">
+        <div class="topfb-brand">
+          <div class="topfb-badge">
+            <img class="topfb-logoimg" src="Multimedia/3.png" alt="Logo ORLINE">
+          </div>
+        </div>
+      </div>
+
+      <nav class="topfb-center" aria-label="Navegación">
+        <a class="topfb-tab" href="Dashboard.html" title="Inicio"><i class="bi bi-house-door"></i></a>
+        <a class="topfb-tab active" href="Ordenes.html" title="Crear orden"><i class="bi bi-clipboard-plus"></i></a>
+        <a class="topfb-tab" href="Pacientes.html" title="Pacientes"><i class="bi bi-person-vcard"></i></a>
+      </nav>
+
+      <div class="topfb-right">
+        <button class="topfb-iconbtn" id="btnTheme" type="button" title="Tema">
+          <i class="bi bi-moon-stars"></i>
+        </button>
+        <button class="topfb-iconbtn" id="btnLogoutDash" type="button" title="Cerrar sesión">
+          <i class="bi bi-box-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="dashwrap dashwrap--wide">
+    <div class="layout3 layout3--fb" style="grid-template-columns: 1fr; max-width: 1260px;">
+
+      <!-- HEADER GLASS + BOTÓN REVERSO -->
+      <section class="order-header-glass mt-3">
+        <div class="order-header-main glass">
+          <div class="order-header-left">
+            <div class="tiny muted">Nueva orden</div>
+            <div class="h5 fw-bold mb-0">Formato de solicitud</div>
+          </div>
+        </div>
+
+        <button class="order-header-flipbtn" id="btnFlip" type="button" title="Ver reverso" aria-label="Ver reverso">
+          <i class="bi bi-arrow-left-right"></i>
+        </button>
+      </section>
+
+      <!-- LIBRO / HOJA -->
+      <section class="order-book-wrap mt-3">
+        <div id="orderBook" class="order-book">
+
+          <!-- FRONT -->
+          <div class="order-face order-front">
+
+            <!-- Datos del paciente + referido -->
+            <section class="glass p-4 order-sheet">
+              <div class="order-sheet-grid">
+
+                <!-- Datos paciente -->
+                <div class="order-block">
+                  <div class="order-block-title">Datos del paciente</div>
+
+                  <div class="order-form-grid">
+                    <div class="order-field">
+                      <label class="form-label small muted">Nombre</label>
+                      <input id="pName" class="form-control form-glass" type="text" placeholder="Ej: Carlos Pérez" />
+                    </div>
+
+                    <div class="order-field">
+                      <label class="form-label small muted">Teléfono</label>
+                      <input id="pPhone" class="form-control form-glass" type="tel"
+                             inputmode="numeric" pattern="[0-9]*" maxlength="15"
+                             placeholder="Ej: 4490000000" />
+                    </div>
+
+                    <div class="order-field">
+                      <label class="form-label small muted">Edad</label>
+                      <input id="pAge" class="form-control form-glass" type="number" min="0" placeholder="Ej: 25" />
+                    </div>
+
+                    <div class="order-field">
+                      <label class="form-label small muted">Fecha de nacimiento</label>
+                      <input id="pDob" class="form-control form-glass" type="date" />
+                    </div>
+
+                    <div class="order-field order-field--full">
+                      <label class="form-label small muted">Domicilio (opcional)</label>
+                      <input id="pAddress" class="form-control form-glass" type="text" placeholder="Ej: Calle, número, colonia" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Referido por -->
+                <aside class="order-block order-block--side">
+                  <div class="order-block-title">Referido por</div>
+
+                  <div class="order-form-grid order-form-grid--side">
+                    <div class="order-field order-field--full">
+                      <label class="form-label small muted">Médico</label>
+                      <input id="refDoctor" class="form-control form-glass" type="text" placeholder="Tu nombre" />
+                    </div>
+
+                    <div class="order-field">
+                      <label class="form-label small muted">Cédula</label>
+                      <input id="refCedula" class="form-control form-glass" type="text" placeholder="Opcional" />
+                    </div>
+
+                    <div class="order-field">
+                      <label class="form-label small muted">Tel</label>
+                      <input id="refTel" class="form-control form-glass" type="tel"
+                             inputmode="numeric" pattern="[0-9]*" maxlength="15"
+                             placeholder="Opcional" />
+                    </div>
+
+                    <div class="order-field order-field--full">
+                      <label class="form-label small muted">E-mail</label>
+                      <input id="refEmail" class="form-control form-glass" type="email" placeholder="Opcional" />
+                    </div>
+                  </div>
+                </aside>
+
+              </div>
+            </section>
+
+            <!-- Selección de estudios -->
+            <section class="glass p-4 mt-3">
+              <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
+                <div class="fw-bold">Selecciona lo que necesita el paciente</div>
+                <div class="tiny muted">Toca el círculo para activar cada bloque</div>
+              </div>
+
+              <div class="order-grid">
+                <!-- ORTODONCIA 3D -->
+                <article class="order-card" data-card="ort3d">
+                  <button class="order-dot" type="button" aria-label="Activar Ortodoncia 3D" data-toggle-card="ort3d"></button>
+                  <div class="order-head">
+                    <div class="order-title">Estudio Ortodoncia 3D</div>
+                    <div class="order-sub muted small">CBCT, panorámica, lateral, escaneo intraoral, trazados</div>
+                  </div>
+
+                  <div class="order-body" data-card-body="ort3d">
+                    <div class="small muted mb-2">Trazado requerido</div>
+                    <div class="order-options">
+                      <label class="opt"><input type="radio" name="ort3d_trazado" value="Ricketts"> Ricketts</label>
+                      <label class="opt"><input type="radio" name="ort3d_trazado" value="Steiner"> Steiner</label>
+                      <label class="opt"><input type="radio" name="ort3d_trazado" value="Jarabak"> Jarabak</label>
+                      <label class="opt"><input type="radio" name="ort3d_trazado" value="Otro"> Otro</label>
+                    </div>
+                    <div class="mt-2">
+                      <label class="form-label small muted">Especificaciones</label>
+                      <input class="form-control form-glass" type="text" data-field="ort3d_specs" placeholder="Opcional" />
+                    </div>
+                  </div>
+                </article>
+
+                <!-- ORTODONCIA 2D -->
+                <article class="order-card" data-card="ort2d">
+                  <button class="order-dot" type="button" aria-label="Activar Ortodoncia 2D" data-toggle-card="ort2d"></button>
+                  <div class="order-head">
+                    <div class="order-title">Estudio Ortodoncia 2D</div>
+                    <div class="order-sub muted small">Panorámica, lateral, fotos, trazado cefalométrico</div>
+                  </div>
+
+                  <div class="order-body" data-card-body="ort2d">
+                    <div class="small muted mb-2">Trazado requerido</div>
+                    <div class="order-options">
+                      <label class="opt"><input type="radio" name="ort2d_trazado" value="Ricketts"> Ricketts</label>
+                      <label class="opt"><input type="radio" name="ort2d_trazado" value="Steiner"> Steiner</label>
+                      <label class="opt"><input type="radio" name="ort2d_trazado" value="Jarabak"> Jarabak</label>
+                      <label class="opt"><input type="radio" name="ort2d_trazado" value="Otro"> Otro</label>
+                    </div>
+                    <div class="mt-2">
+                      <label class="form-label small muted">Especificaciones</label>
+                      <input class="form-control form-glass" type="text" data-field="ort2d_specs" placeholder="Opcional" />
+                    </div>
+                  </div>
+                </article>
+
+                <!-- RX -->
+                <article class="order-card" data-card="rx">
+                  <button class="order-dot" type="button" aria-label="Activar Radiografías digitales" data-toggle-card="rx"></button>
+                  <div class="order-head">
+                    <div class="order-title">Radiografías Digitales</div>
+                    <div class="order-sub muted small">Panorámica, lateral, ATM, senos maxilares, etc.</div>
+                  </div>
+
+                  <div class="order-body" data-card-body="rx">
+                    <div class="order-options">
+                      <label class="opt"><input type="checkbox" value="Panorámica" data-check="rx_items"> Panorámica</label>
+                      <label class="opt"><input type="checkbox" value="Lateral de cráneo" data-check="rx_items"> Lateral de cráneo</label>
+                      <label class="opt"><input type="checkbox" value="ATM bilateral" data-check="rx_items"> ATM bilateral</label>
+                      <label class="opt"><input type="checkbox" value="Senos maxilares" data-check="rx_items"> Senos maxilares</label>
+                      <label class="opt"><input type="checkbox" value="Carpal" data-check="rx_items"> Carpal</label>
+                    </div>
+
+                    <div class="mt-2">
+                      <label class="form-label small muted">Observaciones</label>
+                      <input class="form-control form-glass" type="text" data-field="rx_notes" placeholder="Opcional" />
+                    </div>
+                  </div>
+                </article>
+
+                <!-- FOTOS -->
+                <article class="order-card" data-card="photos">
+                  <button class="order-dot" type="button" aria-label="Activar Fotografías" data-toggle-card="photos"></button>
+                  <div class="order-head">
+                    <div class="order-title">Fotografías Intraorales y Extraorales</div>
+                    <div class="order-sub muted small">Digitales o impresas, fondo blanco/negro</div>
+                  </div>
+
+                  <div class="order-body" data-card-body="photos">
+                    <div class="order-options">
+                      <label class="opt"><input type="checkbox" value="Fondo blanco" data-check="photo_items"> Fondo blanco</label>
+                      <label class="opt"><input type="checkbox" value="Fondo negro" data-check="photo_items"> Fondo negro</label>
+                      <label class="opt"><input type="checkbox" value="Digitales" data-check="photo_items"> Digitales</label>
+                      <label class="opt"><input type="checkbox" value="Impresas" data-check="photo_items"> Impresas</label>
+                    </div>
+
+                    <div class="mt-2">
+                      <label class="form-label small muted">Observaciones</label>
+                      <input class="form-control form-glass" type="text" data-field="photos_notes" placeholder="Opcional" />
+                    </div>
+                  </div>
+                </article>
+
+                <!-- ESCANEO -->
+                <article class="order-card" data-card="scan">
+                  <button class="order-dot" type="button" aria-label="Activar Escaneo intraoral" data-toggle-card="scan"></button>
+                  <div class="order-head">
+                    <div class="order-title">Escaneo Intraoral</div>
+                    <div class="order-sub muted small">Maxilar superior, inferior o ambos</div>
+                  </div>
+
+                  <div class="order-body" data-card-body="scan">
+                    <div class="order-options">
+                      <label class="opt"><input type="radio" name="scan_scope" value="Maxilar superior"> Maxilar superior</label>
+                      <label class="opt"><input type="radio" name="scan_scope" value="Maxilar inferior"> Maxilar inferior</label>
+                      <label class="opt"><input type="radio" name="scan_scope" value="Ambos maxilares"> Ambos maxilares</label>
+                    </div>
+
+                    <div class="mt-2">
+                      <label class="form-label small muted">Especificaciones</label>
+                      <input class="form-control form-glass" type="text" data-field="scan_specs" placeholder="Opcional" />
+                    </div>
+                  </div>
+                </article>
+
+                <!-- IMPRESIÓN 3D -->
+                <article class="order-card" data-card="print3d">
+                  <button class="order-dot" type="button" aria-label="Activar Impresión 3D" data-toggle-card="print3d"></button>
+                  <div class="order-head">
+                    <div class="order-title">Impresión 3D</div>
+                    <div class="order-sub muted small">Con o sin zócalo, superior/inferior/ambos</div>
+                  </div>
+
+                  <div class="order-body" data-card-body="print3d">
+                    <div class="order-options">
+                      <label class="opt"><input type="radio" name="print_base" value="Con zócalo"> Con zócalo</label>
+                      <label class="opt"><input type="radio" name="print_base" value="Sin zócalo"> Sin zócalo</label>
+                    </div>
+
+                    <div class="order-options mt-2">
+                      <label class="opt"><input type="radio" name="print_scope" value="Maxilar superior"> Maxilar superior</label>
+                      <label class="opt"><input type="radio" name="print_scope" value="Maxilar inferior"> Maxilar inferior</label>
+                      <label class="opt"><input type="radio" name="print_scope" value="Ambos maxilares"> Ambos maxilares</label>
+                    </div>
+
+                    <div class="mt-2">
+                      <label class="form-label small muted">Especificaciones</label>
+                      <input class="form-control form-glass" type="text" data-field="print_specs" placeholder="Opcional" />
+                    </div>
+                  </div>
+                </article>
+              </div>
+            </section>
+
+            <!-- Método de envío -->
+            <section class="glass p-4 mt-3">
+              <div class="fw-bold mb-2">Método de envío</div>
+
+              <div class="row g-2">
+                <div class="col-12 col-md-6">
+                  <label class="opt d-block">
+                    <input type="radio" name="delivery_method" value="Digital" checked> Digital
+                  </label>
+                  <label class="opt d-block">
+                    <input type="radio" name="delivery_method" value="Impreso"> Impreso
+                  </label>
+                </div>
+
+                <div class="col-12 col-md-6">
+                  <label class="opt d-block">
+                    <input type="radio" name="delivery_target" value="Entregar al paciente" checked> Entregar al paciente
+                  </label>
+                  <label class="opt d-block">
+                    <input type="radio" name="delivery_target" value="Enviar al consultorio"> Enviar al consultorio
+                  </label>
+                </div>
+              </div>
+            </section>
+
+            <!-- Acciones -->
+            <section class="glass p-3 mt-3 order-actions">
+              <div class="d-flex flex-column flex-sm-row gap-2 justify-content-end">
+                <button id="btnResetOrder" class="btn btn-soft" type="button">
+                  <i class="bi bi-eraser me-1"></i> Limpiar
+                </button>
+                <button id="btnSaveOrder" class="btn btn-primary" type="button">
+                  <i class="bi bi-check2-circle me-1"></i> Guardar orden
+                </button>
+              </div>
+            </section>
+
+          </div><!-- /order-front -->
+
+          <!-- BACK -->
+          <div class="order-face order-back glass p-4">
+
+            <div class="d-flex align-items-start justify-content-between mb-3 gap-2">
+              <div>
+                <div class="fw-bold">Reverso — Control de estudios / CBCT</div>
+
+                <div class="tiny muted mt-1">
+                  <span class="me-3"><b>CT:</b> <span id="backCTMini">—</span></span>
+                  <span><b>Dientes:</b> <span id="backTeethMini">—</span></span>
+                </div>
+              </div>
+
+              <span class="badge rounded-pill text-bg-light">Parte trasera</span>
+            </div>
+
+            <div class="back-grid back-format">
+
+              <!-- FILA SUPERIOR: 3 CAJAS CT -->
+              <div class="back-card back-ctbox back-ct-left">
+                <div class="back-ct-head">
+                  <div class="back-ct-title">Ventana</div>
+                  <div class="back-ct-sub muted small">4x3 / 5x6</div>
+                </div>
+
+                <button type="button" class="ct-card" data-ct="4x3 5x6">
+                  <img src="Multimedia/image (4).png" class="ct-img" alt="">
+                  <div class="ct-meta">
+                    <div class="ct-size">4x3 5x6</div>
+                    <div class="ct-sub muted small">Alta resolución / Implante</div>
+                  </div>
+                </button>
+              </div>
+
+              <div class="back-card back-ctbox back-ct-center">
+                <div class="back-ct-head">
+                  <div class="back-ct-title">Ventana</div>
+                  <div class="back-ct-sub muted small">8x5</div>
+                </div>
+
+                <button type="button" class="ct-card" data-ct="8x5">
+                  <img src="Multimedia/image.png" class="ct-img" alt="">
+                  <div class="ct-meta">
+                    <div class="ct-size">8x5</div>
+                    <div class="ct-sub muted small">Maxilar / Mandíbula</div>
+                  </div>
+                </button>
+              </div>
+
+              <div class="back-card back-ctbox back-ct-right">
+                <div class="back-ct-head">
+                  <div class="back-ct-title">Ventana</div>
+                  <div class="back-ct-sub muted small">8x5</div>
+                </div>
+
+                <button type="button" class="ct-card" data-ct="8x5">
+                  <img src="Multimedia/image (2).png" class="ct-img" alt="">
+                  <div class="ct-meta">
+                    <div class="ct-size">8x5</div>
+                    <div class="ct-sub muted small">Derecha / Izquierda</div>
+                  </div>
+                </button>
+              </div>
+
+                   <!-- FILA MEDIA: caja grande derecha -->
+              <div class="back-card back-wide back-wide-right">
+                <div class="back-title">Ventana</div>
+
+                <button type="button" class="ct-card" data-ct="8x10 10x10">
+                  <img src="Multimedia/image (3).png" class="ct-img" alt="">
+                  <div class="ct-meta">
+                    <div class="ct-size">8x10 / 10x10</div>
+                    <div class="ct-sub muted small">Bimaxilar / Senos</div>
+                  </div>
+                </button>
+              </div>
+
+              <!-- FILA MEDIA: caja grande izquierda -->
+              <div class="back-card back-wide back-wide-left">
+                <div class="back-title">Ventana</div>
+
+                <button type="button" class="ct-card" data-ct="12x10 16x10">
+                  <img src="Multimedia/image (5).png" class="ct-img" alt="">
+                  <div class="ct-meta">
+                    <div class="ct-size">12x10 / 16x10</div>
+                    <div class="ct-sub muted small">Hasta 3er molar / ATM bilateral</div>
+                  </div>
+                </button>
+<div>
+      <div class="ct-selected mt-3">
+                  <div class="tiny muted">Selección:</div>
+                  <div class="fw-bold" id="ctSelectedLabel">—</div>
+                </div>
+              </div>
+</div>
+        
+
+              
+
+
+              <!-- FILA MEDIA: titulo centro -->
+              <div class="back-card back-zone-title">
+                ZONA DE MAYOR INTERÉS
+              </div>              
+
+              <!-- FILA INFERIOR: Odontograma -->
+              <div class="back-card back-odontogram">
+                <div class="tiny muted mb-2">Hover para resaltar • clic para seleccionar dientes</div>
+
+                <div class="teeth-rl">
+                  <span class="teeth-r">R</span>
+                  <span class="teeth-l">L</span>
+                </div>
+
+                <div class="teeth-grid" id="teethGrid">
+                  <div class="teeth-row">
+                    <button type="button" class="tooth" data-tooth="18">18</button>
+                    <button type="button" class="tooth" data-tooth="17">17</button>
+                    <button type="button" class="tooth" data-tooth="16">16</button>
+                    <button type="button" class="tooth" data-tooth="15">15</button>
+                    <button type="button" class="tooth" data-tooth="14">14</button>
+                    <button type="button" class="tooth" data-tooth="13">13</button>
+                    <button type="button" class="tooth" data-tooth="12">12</button>
+                    <button type="button" class="tooth" data-tooth="11">11</button>
+
+                    <span class="tooth-mid muted small">|</span>
+
+                    <button type="button" class="tooth" data-tooth="21">21</button>
+                    <button type="button" class="tooth" data-tooth="22">22</button>
+                    <button type="button" class="tooth" data-tooth="23">23</button>
+                    <button type="button" class="tooth" data-tooth="24">24</button>
+                    <button type="button" class="tooth" data-tooth="25">25</button>
+                    <button type="button" class="tooth" data-tooth="26">26</button>
+                    <button type="button" class="tooth" data-tooth="27">27</button>
+                    <button type="button" class="tooth" data-tooth="28">28</button>
+                  </div>
+                  <div class="teeth-row mt-2">
+                    <button type="button" class="tooth" data-tooth="48">48</button>
+                    <button type="button" class="tooth" data-tooth="47">47</button>
+                    <button type="button" class="tooth" data-tooth="46">46</button>
+                    <button type="button" class="tooth" data-tooth="45">45</button>
+                    <button type="button" class="tooth" data-tooth="44">44</button>
+                    <button type="button" class="tooth" data-tooth="43">43</button>
+                    <button type="button" class="tooth" data-tooth="42">42</button>
+                    <button type="button" class="tooth" data-tooth="41">41</button>
+
+                    <span class="tooth-mid muted small">|</span>
+
+                    <button type="button" class="tooth" data-tooth="31">31</button>
+                    <button type="button" class="tooth" data-tooth="32">32</button>
+                    <button type="button" class="tooth" data-tooth="33">33</button>
+                    <button type="button" class="tooth" data-tooth="34">34</button>
+                    <button type="button" class="tooth" data-tooth="35">35</button>
+                    <button type="button" class="tooth" data-tooth="36">36</button>
+                    <button type="button" class="tooth" data-tooth="37">37</button>
+                    <button type="button" class="tooth" data-tooth="38">38</button>
+                  </div>
+                </div>
+
+                <div class="mt-3">
+                  <div class="tiny muted">Dientes seleccionados:</div>
+                  <div class="fw-bold" id="teethSelectedLabel">—</div>
+                </div>
+              </div>
+
+            </div><!-- /back-grid -->
+
+          </div><!-- /order-back -->
+
+        </div><!-- /orderBook -->
+      </section>
+
+      <!-- Mensajes -->
+      <section class="mt-3">
+        <div id="orderMsg" class="alert alert-success d-none py-2"></div>
+        <div id="orderErr" class="alert alert-danger d-none py-2"></div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- MODAL CONFIRMAR ENVÍO  -->
+  <div class="modal fade" id="confirmSendModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content glass">
+        <div class="modal-header">
+          <h5 class="modal-title">Confirmación</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="mb-2">¿Confirmas que esté todo correcto?</div>
+          <div id="confirmSendSummary" class="p-3 rounded"
+               style="background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.10);"></div>
+        </div>
+
+        <div class="modal-footer">
+          <button id="btnConfirmSendNo" type="button" class="btn btn-soft" data-bs-dismiss="modal">
+            Cancelar
+          </button>
+          <button id="btnConfirmSendYes" type="button" class="btn btn-primary">
+            Sí, enviar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="JavaScript/theme.js"></script>
+  <script src="JavaScript/ordenes.js"></script>
+    <script src="JavaScript/topnav.js"></script>
+</body>
+</html>

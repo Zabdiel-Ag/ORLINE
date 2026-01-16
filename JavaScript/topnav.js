@@ -1,23 +1,32 @@
 (() => {
-  function setActiveTab() {
-    const path = (location.pathname.split("/").pop() || "").toLowerCase();
+  function cleanFileName() {
+    let file = (location.pathname.split("/").pop() || "").toLowerCase();
+    file = file.split("?")[0].split("#")[0];
+    return file;
+  }
 
-    // mapa archivo -> data-screen
+  function setActiveTab() {
+    const file = cleanFileName();
+
+    // Soporta nombres con mayúsculas y también "pacintes.html" por si lo tienes así
     const map = {
-      "dashboard.html": "home",
-      "pos.html": "pos",
-      "inventario.html": "inventory",
-      "reportes.html": "reports",
-      "equipo.html": "team",
+      "": "index",
+      "Index.html": "index",
+      "Dashboard.html": "dashboard",
+      "Ordenes.html": "ordenes",
+      "Pacintes.html": "pacientes" 
     };
 
-    const screen = map[path] || "home";
+    const screen = map[file] || "Index";
 
-    document.querySelectorAll(".topfb-tab.nav-item").forEach(a => {
-      const isActive = (a.dataset.screen === screen);
-      a.classList.toggle("active", isActive);
-      if (isActive) a.setAttribute("aria-current", "page");
-      else a.removeAttribute("aria-current");
+    const tabs = document.querySelectorAll(".topfb-tab[data-screen]");
+    if (!tabs.length) return;
+
+    tabs.forEach(tab => {
+      const isActive = String(tab.dataset.screen || "").toLowerCase() === screen;
+      tab.classList.toggle("active", isActive);
+      if (isActive) tab.setAttribute("aria-current", "page");
+      else tab.removeAttribute("aria-current");
     });
   }
 

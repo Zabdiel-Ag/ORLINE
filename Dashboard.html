@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Mi POS — Dashboard</title>
+  <title>ORLINE</title>
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
@@ -15,7 +15,6 @@
 
   <header class="topfb d-none d-lg-block">
     <div class="topfb-inner">
-
       <div class="topfb-left">
         <div class="topfb-brand">
           <div class="topfb-badge">
@@ -25,76 +24,37 @@
       </div>
 
       <nav class="topfb-center" aria-label="Navegación">
-        <a class="topfb-tab active" href="Dashboard.html" data-screen="home" title="Inicio">
-          <i class="bi bi-house-door"></i>
-        </a>
-        <a class="topfb-tab" href="Pos.html" data-screen="pos" title="Caja (POS)">
-          <i class="bi bi-credit-card-2-front"></i>
-        </a>
-        <a class="topfb-tab" href="Inventario.html" data-screen="inventory" title="Inventario">
-          <i class="bi bi-box-seam"></i>
-        </a>
-        <a class="topfb-tab" href="Reportes.html" data-screen="reports" title="Reportes">
-          <i class="bi bi-bar-chart"></i>
-        </a>
-        <a class="topfb-tab" href="Equipo.html" data-screen="team" title="Equipo">
-          <i class="bi bi-people"></i>
-        </a>
+        <a class="topfb-tab active" href="Dashboard.html" title="Inicio"><i class="bi bi-house-door"></i></a>
+        <a class="topfb-tab" href="Ordenes.html" title="Crear orden"><i class="bi bi-clipboard-plus"></i></a>
+        <a class="topfb-tab" href="Pacientes.html" title="Pacientes"><i class="bi bi-person-vcard"></i></a>
       </nav>
 
-      <div class="topfb-right">
-        <button class="topfb-iconbtn" id="btnOpenPost" type="button" title="Crear">
-          <i class="bi bi-plus-lg"></i>
-        </button>
+      
 
+      <div class="topfb-right">
         <button class="topfb-iconbtn" id="btnTheme" type="button" title="Tema">
           <i class="bi bi-moon-stars"></i>
         </button>
-
         <button class="topfb-iconbtn" id="btnLogoutDash" type="button" title="Cerrar sesión">
           <i class="bi bi-box-arrow-right"></i>
         </button>
       </div>
-
     </div>
   </header>
 
   <main class="dashwrap dashwrap--wide">
     <div class="layout3 layout3--fb" style="grid-template-columns: 1fr; max-width: 1260px;">
 
+      <!-- Bienvenida (glass) -->
       <section class="glass p-4">
         <div class="welcome-center">
-          <div class="h5 fw-bold mb-1" id="docWelcomeTitle">Bienvenido</div>
-
-      
+          <div class="h5 fw-bold mb-0 text-center" id="docWelcomeTitle">Bienvenido</div>
         </div>
       </section>
 
+      <!-- KPIs (glass) -->
       <section class="glass p-4 mt-3">
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
-          <div class="fw-bold">Reportes de los pacientes</div>
-
-          <div class="d-flex flex-wrap align-items-center gap-2">
-            <div class="input-group" style="width: min(320px, 80vw);">
-              <span class="input-group-text form-glass"><i class="bi bi-search"></i></span>
-              <input id="patientSearchInput" class="form-control form-glass" type="text" placeholder="Buscar paciente..." />
-            </div>
-
-            <select id="statusFilter" class="form-select form-glass" style="width: 210px;">
-              <option value="all">Todos</option>
-              <option value="pending">Pendientes</option>
-              <option value="ready">Listos</option>
-              <option value="delivered">Entregados</option>
-            </select>
-
-            <input id="dateFrom" class="form-control form-glass" type="date" style="width: 170px;">
-            <input id="dateTo" class="form-control form-glass" type="date" style="width: 170px;">
-
-            <button id="btnClearFilters" class="btn btn-soft" type="button">Limpiar</button>
-          </div>
-        </div>
-
-        <div class="kpis mb-3">
+        <div class="kpis mb-0">
           <div class="kpibox">
             <div class="kpi-head">
               <div class="tiny muted">Pendientes</div>
@@ -127,39 +87,12 @@
             <div class="kpi-value" id="kpiTotal">0</div>
           </div>
         </div>
-
-        <div class="table-responsive table-glass">
-          <table class="table table-glass-table align-middle mb-0">
-            <thead>
-              <tr>
-                <th>Paciente</th>
-                <th>Estudio</th>
-                <th>Fecha</th>
-                <th>Estado</th>
-                <th class="text-end">Acción</th>
-              </tr>
-            </thead>
-            <tbody id="patientsTableBody">
-              <tr>
-                <td colspan="5" class="text-center small muted py-4">Sin datos aún…</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-3">
-          <div class="small muted" id="tableSummary">Mostrando 0 registros</div>
-          <div class="d-flex gap-2">
-            <button id="btnPrevPage" class="btn btn-soft btn-sm" type="button">Anterior</button>
-            <button id="btnNextPage" class="btn btn-soft btn-sm" type="button">Siguiente</button>
-          </div>
-        </div>
-
       </section>
 
     </div>
   </main>
 
+  <!-- Modal logout -->
   <div class="modal fade" id="logoutModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content modal-dark">
@@ -184,7 +117,6 @@
   <script src="JavaScript/dashboard.js"></script>
   <script src="JavaScript/theme.js"></script>
   <script src="JavaScript/topnav.js"></script>
-  <script src="JavaScript/Topfb.js"></script>
 
 </body>
 </html>
