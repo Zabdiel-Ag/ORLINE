@@ -1,121 +1,19 @@
+// JavaScript/dashboard.js
+import { supabase } from "./supabaseClient.js";
 
+/* =========================
+   CONFIG (solo aquí)
+========================= */
+const SESSION_LOGOUT_FLAG = "orline_logout";
 
-/* Unifica con Index */
-const USERS_KEY = "orline_users";
-const SESSION_KEY = "orline_session";
-const BUSINESSES_KEY = "pos_businesses";
-
-/* Compat: por si aún existen keys viejas */
-const LEGACY_SESSION_KEYS = ["pos_session"];
-const LEGACY_USERS_KEYS = ["pos_users"];
-
-const PATIENT_KEYS = [
-  "orline_orders",       
-  "orline_patients",
-  "pos_patients",
-  "pos_radiology_patients",
-  "pos_orders_radiology",
-  "pos_orders",
-  "pos_studies"
-];
-
-/* Evita “parpadeo” por redirects dobles */
-let isLoggingOut = false;
-let hasRedirected = false;
-
-/* -------------------------
-   Storage utils
--------------------------- */
-function safeJSON(key, fallback) {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw);
-  } catch {
-    return fallback;
-  }
-}
-
-function getUsers() {
-  const a = safeJSON(USERS_KEY, null);
-  if (Array.isArray(a)) return a;
-
-  for (const k of LEGACY_USERS_KEYS) {
-    const b = safeJSON(k, null);
-    if (Array.isArray(b)) return b;
-  }
-  return [];
-}
-
-function getSession() {
-  return safeJSON(SESSION_KEY, null) || safeJSON("pos_session", null) || null;
-}
-
-function clearSession() {
-  localStorage.removeItem(SESSION_KEY);
-  for (const k of LEGACY_SESSION_KEYS) localStorage.removeItem(k);
-}
-
-function getBusinesses() { return safeJSON(BUSINESSES_KEY, []); }
-function getBusinessByOwner(userId) {
-  return getBusinesses().find(b => b.ownerUserId === userId) || null;
-}
-
-function findArrayFromStorage(keys) {
-  for (const k of keys) {
-    const v = safeJSON(k, null);
-    if (Array.isArray(v)) return { key: k, arr: v };
-  }
-  return null;
-}
-
-/* -------------------------
-   Auth
--------------------------- */
-function redirectToIndex() {
-  if (hasRedirected) return;
-  hasRedirected = true;
-  window.location.replace("Index.html");
-}
-
-function requireAuthOrRedirect() {
-  if (isLoggingOut) return null;
-
-  const session = getSession();
-
-  if (sessionStorage.getItem("orline_logout") === "1") {
-    sessionStorage.removeItem("orline_logout");
-    clearSession();
-    redirectToIndex();
-    return null;
-  }
-
-  if (!session?.userId && !session?.id) {
-    redirectToIndex();
-    return null;
-  }
-
-  const sessionUserId = session.userId || session.id;
-
-  const user = getUsers().find(u => u.id === sessionUserId);
-  if (!user) {
-    clearSession();
-    redirectToIndex();
-    return null;
-  }
-
-  const biz = getBusinessByOwner(sessionUserId) || null;
-  return { user, biz };
-}
-
-/* -------------------------
-   DOM helpers
--------------------------- */
+/* =========================
+   Helpers DOM
+========================= */
 function $(id) { return document.getElementById(id); }
 
 function setText(id, value) {
   const el = $(id);
-  if (el) el.textContent = value;
+  if (el) el.textContent = value ?? "";
 }
 
 function escapeHtml(str) {
@@ -129,6 +27,98 @@ function escapeHtml(str) {
 
 function normalizeStr(x) {
   return String(x ?? "").trim();
+}
+
+/* =========================
+   Auth / Profile
+========================= */
+async function getAuthUser() {
+  const { data, error } = await supabase.auth.getUser();
+  if (error) return null;
+  return data?.user || null;
+}
+
+async function getMyProfile(userId) {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, role, display_name, clinic_name, created_at")
+    .eq("id", userId)
+    .single();
+
+  if (error) return null;
+  return data;
+}
+
+function redirectReplace(url) {
+  window.location.replace(url);
+}
+
+async function requireDoctorOrRedirect() {
+  // si vienes de logout
+  if (sessionStorage.getItem(SESSION_LOGOUT_FLAG) === "1") {
+    sessionStorage.removeItem(SESSION_LOGOUT_FLAG);
+    await supabase.auth.signOut();
+    redirectReplace("Index.html");
+    return null;
+  }
+
+  const user = await getAuthUser();
+  if (!user) {
+    redirectReplace("Index.html");
+    return null;
+  }
+
+  const profile = await getMyProfile(user.id);
+  if (!profile) {
+    await supabase.auth.signOut();
+    redirectReplace("Index.html");
+    return null;
+  }
+
+  // Solo doctores deben estar aquí
+  if (profile.role !== "doctor") {
+    if (profile.role === "admin") redirectReplace("Index.html"); // o Admin.html si lo separas
+    else if (profile.role === "employee") redirectReplace("Empleado.html");
+    else redirectReplace("Index.html");
+    return null;
+  }
+
+  // si doctor no completó perfil mínimo
+  if (!profile.clinic_name) {
+    redirectReplace("Index.html"); // vuelve para completar
+    return null;
+  }
+
+  return { user, profile };
+}
+
+/* =========================
+   Data: Orders (Supabase)
+========================= */
+function normalizeStatus(raw) {
+  const s = normalizeStr(raw).toLowerCase();
+  if (!s) return "pending";
+  if (["pendiente", "pending", "espera", "waiting"].includes(s)) return "pending";
+  if (["proceso", "process", "en proceso"].includes(s)) return "process";
+  if (["listo", "ready", "finalizado", "done", "terminado"].includes(s)) return "ready";
+  if (["entregado", "delivered", "entrega", "entregada"].includes(s)) return "delivered";
+  return s;
+}
+
+function statusLabel(st) {
+  if (st === "pending") return "Pendiente";
+  if (st === "process") return "En proceso";
+  if (st === "ready") return "Listo";
+  if (st === "delivered") return "Entregado";
+  return st;
+}
+
+function statusBadgeClass(st) {
+  if (st === "pending") return "badge text-bg-warning";
+  if (st === "process") return "badge text-bg-info";
+  if (st === "ready") return "badge text-bg-success";
+  if (st === "delivered") return "badge text-bg-secondary";
+  return "badge text-bg-light";
 }
 
 function parseISODateToYMD(isoLike) {
@@ -147,166 +137,28 @@ function inRangeYMD(ymd, fromYMD, toYMD) {
   return true;
 }
 
-/* -------------------------
-   Prefijo Dr/Dra
--------------------------- */
-function normalizeGenderValue(v) {
-  const s = normalizeStr(v).toLowerCase();
-  if (!s) return "";
+async function fetchOrdersForDoctor(doctorId) {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("id, patient_name, status, created_at, folio, notes")
+    .eq("doctor_id", doctorId)
+    .order("created_at", { ascending: false });
 
-  if (["m", "masculino", "hombre", "male", "man"].includes(s)) return "male";
-  if (["f", "femenino", "mujer", "female", "woman"].includes(s)) return "female";
+  if (error) return [];
 
-  return s;
+  return (data || []).map(o => ({
+    id: o.id,
+    patientName: normalizeStr(o.patient_name) || "—",
+    study: normalizeStr(o.folio) || "—", // si folio lo usas como "estudio" cámbialo
+    ymd: parseISODateToYMD(o.created_at),
+    status: normalizeStatus(o.status),
+    raw: o
+  }));
 }
 
-function getDoctorPrefix(ctx) {
-  const u = ctx?.user || {};
-  const sess = getSession() || {};
-
-  const raw =
-    u.gender ?? u.sexo ?? u.sex ?? u.genero ??
-    sess.gender ?? sess.sexo ?? sess.sex ?? sess.genero ??
-    "";
-
-  const g = normalizeGenderValue(raw);
-
-  if (g === "female") return "Dra.";
-  if (g === "male") return "Dr.";
-  return "Dr.";
-}
-
-/* -------------------------
-   Modelo de registro
--------------------------- */
-function normalizeStatus(raw) {
-  const s = normalizeStr(raw).toLowerCase();
-
-  if (!s) return "pending";
-  if (["pendiente", "pending", "espera", "waiting"].includes(s)) return "pending";
-  if (["listo", "ready", "finalizado", "done", "terminado"].includes(s)) return "ready";
-  if (["entregado", "delivered", "entrega", "entregada"].includes(s)) return "delivered";
-
-  return s;
-}
-
-function statusLabel(st) {
-  if (st === "pending") return "Pendiente";
-  if (st === "ready") return "Listo";
-  if (st === "delivered") return "Entregado";
-  return st;
-}
-
-function statusBadgeClass(st) {
-  if (st === "pending") return "badge text-bg-warning";
-  if (st === "ready") return "badge text-bg-success";
-  if (st === "delivered") return "badge text-bg-secondary";
-  return "badge text-bg-light";
-}
-
-/* -------------------------
-   Lectura de pacientes/estudios (✅ ahora lee órdenes nuevas)
--------------------------- */
-function readPatientsForDoctor(ctx) {
-  const hit = findArrayFromStorage(PATIENT_KEYS);
-  if (!hit?.arr?.length) return [];
-
-  const userId = ctx.user?.id;
-  const userEmail = normalizeStr(ctx.user?.email).toLowerCase();
-  const bizId = ctx.biz?.id || null;
-
-  const rows = hit.arr
-    .filter(x => x && typeof x === "object")
-    .map(x => {
-      // ✅ paciente (soporta payload.patient.name)
-      const patientName =
-        x.patientName ||
-        x.paciente ||
-        x.nombrePaciente ||
-        x.patient ||
-        x.name ||
-        x.patient?.name ||
-        "";
-
-      // ✅ estudio (soporta payload.study o selections.active)
-      const study =
-        x.study ||
-        x.estudio ||
-        x.studyType ||
-        x.tipoEstudio ||
-        x.type ||
-        (Array.isArray(x.selections?.active) ? x.selections.active.join(" + ") : "") ||
-        "";
-
-      const createdAt =
-        x.createdAt ||
-        x.date ||
-        x.fecha ||
-        x.timestamp ||
-        x.time ||
-        "";
-
-      // ✅ doctor meta (soporta session.userId y doctorEmail)
-      const doctorId =
-        x.doctorId ||
-        x.medicoId ||
-        x.userId ||
-        x.ownerUserId ||
-        x.session?.userId ||
-        x.session?.id ||
-        "";
-
-      const doctorEmail =
-        normalizeStr(
-          x.doctorEmail ||
-          x.emailDoctor ||
-          x.medicoEmail ||
-          x.session?.email ||
-          ""
-        ).toLowerCase();
-
-      const recordBizId =
-        x.bizId ||
-        x.businessId ||
-        x.cabinetId ||
-        x.clinicId ||
-        x.session?.bizId ||
-        x.session?.businessId ||
-        "";
-
-      const status =
-        normalizeStatus(x.status || x.estado || x.stage || x.state || "pending");
-
-      const id = x.id || x.orderId || x.studyId || crypto.randomUUID();
-      const ymd = parseISODateToYMD(createdAt);
-
-      return {
-        id,
-        patientName: normalizeStr(patientName),
-        study: normalizeStr(study) || "—",
-        ymd,
-        status,
-        raw: x,
-        meta: { doctorId: String(doctorId), doctorEmail: String(doctorEmail), recordBizId: String(recordBizId) }
-      };
-    })
-    .filter(r => {
-      const byDoctor =
-        (userId && r.meta.doctorId && r.meta.doctorId === userId) ||
-        (userEmail && r.meta.doctorEmail && r.meta.doctorEmail === userEmail);
-
-      const byBiz = bizId && r.meta.recordBizId && r.meta.recordBizId === bizId;
-
-      return byDoctor || byBiz;
-    });
-
-  rows.sort((a, b) => (b.ymd || "").localeCompare(a.ymd || ""));
-  return rows;
-}
-
-/* -------------------------
-   Estado UI
--------------------------- */
+/* =========================
+   State + Filters
+========================= */
 const state = {
   all: [],
   filtered: [],
@@ -314,21 +166,6 @@ const state = {
   pageSize: 10
 };
 
-/* -------------------------
-   Render: bienvenida y badges
--------------------------- */
-function renderHeader(ctx) {
-  const name = normalizeStr(ctx.user?.name) || "Doctor";
-  const prefix = getDoctorPrefix(ctx);
-
-  setText("docWelcomeTitle", `Bienvenido, ${prefix} ${name}`);
-  setText("docClinicBadge", ctx.biz?.name || "—");
-  setText("docCabinetBadge", ctx.biz?.handle ? "@" + ctx.biz.handle : "—");
-}
-
-/* -------------------------
-   Filtros
--------------------------- */
 function getFilters() {
   const q = normalizeStr($("patientSearchInput")?.value).toLowerCase();
   const status = $("statusFilter")?.value || "all";
@@ -344,7 +181,7 @@ function applyFilters() {
     const matchesQ =
       !q ||
       r.patientName.toLowerCase().includes(q) ||
-      r.study.toLowerCase().includes(q);
+      (r.study || "").toLowerCase().includes(q);
 
     const matchesStatus = status === "all" ? true : r.status === status;
     const matchesDate = (!from && !to) ? true : inRangeYMD(r.ymd, from, to);
@@ -357,24 +194,30 @@ function applyFilters() {
   renderTable();
 }
 
-/* -------------------------
-   KPIs
--------------------------- */
+/* =========================
+   UI Render
+========================= */
+function renderHeader(ctx) {
+  const name = normalizeStr(ctx.profile?.display_name) || "Doctor";
+  setText("docWelcomeTitle", `Bienvenido, ${name}`);
+  setText("docClinicBadge", ctx.profile?.clinic_name || "—");
+  setText("docCabinetBadge", "—"); // si luego agregas cabinet en schema
+}
+
 function renderKpis() {
   const total = state.filtered.length;
   const pending = state.filtered.filter(x => x.status === "pending").length;
+  const process = state.filtered.filter(x => x.status === "process").length;
   const ready = state.filtered.filter(x => x.status === "ready").length;
   const delivered = state.filtered.filter(x => x.status === "delivered").length;
 
   setText("kpiTotal", String(total));
   setText("kpiPending", String(pending));
+  setText("kpiProcess", String(process)); // si existe en tu HTML
   setText("kpiReady", String(ready));
   setText("kpiDelivered", String(delivered));
 }
 
-/* -------------------------
-   Tabla + paginación
--------------------------- */
 function pageCount() {
   return Math.max(1, Math.ceil(state.filtered.length / state.pageSize));
 }
@@ -443,26 +286,20 @@ function bindRowActions() {
       const id = btn.getAttribute("data-open");
       const r = state.filtered.find(x => x.id === id);
       if (!r) return;
-      openRecord(r);
+
+      alert(
+        `Paciente: ${r.patientName}\n` +
+        `Folio/Estudio: ${r.study}\n` +
+        `Fecha: ${r.ymd}\n` +
+        `Estado: ${statusLabel(r.status)}`
+      );
     });
   });
 }
 
-function openRecord(record) {
-  const raw = record.raw || {};
-  const msg =
-    `Paciente: ${record.patientName || "—"}\n` +
-    `Estudio: ${record.study || "—"}\n` +
-    `Fecha: ${record.ymd || "—"}\n` +
-    `Estado: ${statusLabel(record.status)}\n\n` +
-    `Detalle (JSON):\n${JSON.stringify(raw, null, 2)}`;
-
-  alert(msg);
-}
-
-/* -------------------------
-   Eventos UI
--------------------------- */
+/* =========================
+   Events
+========================= */
 function setupFilters() {
   const q = $("patientSearchInput");
   const status = $("statusFilter");
@@ -504,60 +341,27 @@ function setupPager() {
   });
 }
 
-/* -------------------------
-   Logout
--------------------------- */
 function setupLogout() {
   const btn = $("btnLogoutDash");
-  const modalEl = $("logoutModal");
-  const confirmBtn = $("confirmLogout");
-
-  const doLogout = () => {
-    if (isLoggingOut) return;
-    isLoggingOut = true;
-
-    sessionStorage.setItem("orline_logout", "1");
-
-    if (modalEl && window.bootstrap?.Modal) {
-      const m = bootstrap.Modal.getOrCreateInstance(modalEl);
-      m.hide();
-    }
-
-    clearSession();
-    redirectToIndex();
-  };
-
-  const fallback = () => {
-    if (confirm("¿Seguro que deseas cerrar sesión?")) doLogout();
-  };
-
-  if (!modalEl || !window.bootstrap?.Modal) {
-    btn?.addEventListener("click", fallback);
-    return;
-  }
-
-  const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-  btn?.addEventListener("click", () => modal.show());
-  confirmBtn?.addEventListener("click", doLogout);
+  btn?.addEventListener("click", async () => {
+    sessionStorage.setItem(SESSION_LOGOUT_FLAG, "1");
+    await supabase.auth.signOut();
+    redirectReplace("Index.html");
+  });
 }
 
-/* -------------------------
-   INIT
--------------------------- */
-function refreshDashboardUI() {
-  const ctx = requireAuthOrRedirect();
-  if (!ctx) return;
-  state.all = readPatientsForDoctor(ctx);
-  applyFilters();
-}
-
-function boot() {
-  const ctx = requireAuthOrRedirect();
+/* =========================
+   Boot
+========================= */
+async function boot() {
+  const ctx = await requireDoctorOrRedirect();
   if (!ctx) return;
 
   renderHeader(ctx);
 
-  state.all = readPatientsForDoctor(ctx);
+  // cargar datos
+  state.all = await fetchOrdersForDoctor(ctx.user.id);
+
   setupFilters();
   setupPager();
   setupLogout();
@@ -566,17 +370,3 @@ function boot() {
 }
 
 document.addEventListener("DOMContentLoaded", boot);
-
-window.addEventListener("orline:ordersUpdated", () => {
-  refreshDashboardUI();
-});
-
-window.addEventListener("storage", (e) => {
-  if (isLoggingOut) return;
-  if (!e?.key) return;
-
-  if (e.key === SESSION_KEY || LEGACY_SESSION_KEYS.includes(e.key)) return;
-  if (!PATIENT_KEYS.includes(e.key)) return;
-
-  refreshDashboardUI();
-});
