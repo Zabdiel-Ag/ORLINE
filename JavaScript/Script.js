@@ -2,9 +2,6 @@ import { supabase } from "./supabaseClient.js";
 
 /* =========================================================
    ORLINE — Script.js (Auth + Roles + Admin Invites)
-   - No mezcla JS con HTML
-   - Admin genera códigos por RPC (create_invite / generate_invite fallback)
-   - Valida codes con RPC (validate_invite) y reclama con RPC (claim_invite)
    ========================================================= */
 
 /* -------------------------
@@ -53,18 +50,6 @@ function escapeHtml(str) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 }
-function setText(id, txt) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = txt ?? "";
-}
-function showEl(id) {
-  const el = document.getElementById(id);
-  if (el) el.classList.remove("d-none");
-}
-function hideEl(id) {
-  const el = document.getElementById(id);
-  if (el) el.classList.add("d-none");
-}
 
 /* -------------------------
    DOM refs
@@ -97,7 +82,7 @@ const docProfileError = document.getElementById("docProfileError");
 
 const doctorsTableBody = document.getElementById("doctorsTableBody");
 
-/* Admin UI (si existen en tu HTML) */
+/* Admin UI */
 const invDays = document.getElementById("invDays");
 const btnGenDoctorInvite = document.getElementById("btnGenDoctorInvite");
 const btnGenEmployeeInvite = document.getElementById("btnGenEmployeeInvite");
@@ -152,9 +137,12 @@ async function getMyProfile(userId) {
     .from("profiles")
     .select("id, role, display_name, clinic_name, created_at")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
 
-  if (error) return null;
+  if (error) {
+    console.error("getMyProfile error:", error);
+    return null;
+  }
   return data;
 }
 
@@ -163,11 +151,6 @@ async function upsertMyProfile(payload) {
   if (error) throw error;
 }
 
-/**
- * Evita el error "Tu perfil no existe"
- * Si el usuario existe en auth pero no en profiles, intenta crear el mínimo.
- * Requiere policy: profiles_insert_own.
- */
 async function ensureProfileAfterAuth(user) {
   const profile = await getMyProfile(user.id);
   if (profile) return profile;
@@ -176,7 +159,7 @@ async function ensureProfileAfterAuth(user) {
     const display = user?.user_metadata?.display_name || user?.email || "Usuario";
     await upsertMyProfile({
       id: user.id,
-      role: "doctor", // default "seguro"; luego se corrige según invite
+      role: "doctor",
       display_name: display,
       clinic_name: null,
     });
@@ -188,9 +171,7 @@ async function ensureProfileAfterAuth(user) {
 }
 
 /* -------------------------
-   RPC Invites (validate / claim)
-   - validate_invite(p_code) returns table(ok, invite_type, expires_at, used_at)
-   - claim_invite(p_code) returns table(ok, invite_type)
+   RPC Invites
 -------------------------- */
 async function rpcValidateInvite(code) {
   const { data, error } = await supabase.rpc("validate_invite", { p_code: code });
@@ -291,10 +272,9 @@ document.getElementById("btnRegister")?.addEventListener("click", async () => {
   // 1) Validar invite
   try {
     const v = await rpcValidateInvite(inviteCode);
+    const t = String(v?.invite_type || v?.kind || "").toLowerCase();
     if (!v?.ok) return showError(regError, "Código inválido o expirado.");
-    if (String(v.invite_type || "").toLowerCase() !== "doctor") {
-      return showError(regError, "Este código no es de doctor.");
-    }
+    if (t !== "doctor") return showError(regError, "Este código no es de doctor.");
   } catch (e) {
     console.error(e);
     return showError(regError, "No se pudo validar el código (RPC). Revisa tu SQL/RLS.");
@@ -310,14 +290,14 @@ document.getElementById("btnRegister")?.addEventListener("click", async () => {
 
   const userId = data?.user?.id;
 
-  // Si tienes Email confirmation ON, puede que aquí no haya sesión aún.
+  // Si hay confirmación por email, no hay sesión todavía
   if (!userId) {
-    showError(regError, "Cuenta creada. Revisa tu correo para confirmar e inicia sesión.");
+    showError(regError, "Cuenta creada ✅ Revisa tu correo para confirmar e inicia sesión.");
     showView("view-login");
     return;
   }
 
-  // 3) Reclamar invite
+  // 3) Reclamar invite (si hay sesión)
   try {
     const c = await rpcClaimInvite(inviteCode);
     if (!c?.ok) return showError(regError, "No se pudo reclamar el código.");
@@ -326,7 +306,7 @@ document.getElementById("btnRegister")?.addEventListener("click", async () => {
     return showError(regError, "No se pudo reclamar el código (RPC).");
   }
 
-  // 4) Crear profile
+  // 4) Crear/Actualizar profile
   try {
     await upsertMyProfile({
       id: userId,
@@ -335,18 +315,11 @@ document.getElementById("btnRegister")?.addEventListener("click", async () => {
       clinic_name: null,
     });
   } catch (e) {
-    // Si falla por RLS, lo verá al hacer login
     console.warn("upsert profile doctor falló:", e);
   }
 
-  const profile = await getMyProfile(userId);
-  if (!profile) {
-    showError(regError, "Cuenta creada. Inicia sesión para continuar.");
-    showView("view-login");
-    return;
-  }
-
-  await routeByRole(profile);
+  showView("view-login");
+  showError(loginError, "Cuenta creada ✅ Inicia sesión para continuar.");
 });
 
 /* -------------------------
@@ -368,10 +341,9 @@ document.getElementById("btnEmployeeCreate")?.addEventListener("click", async ()
   // 1) Validar invite
   try {
     const v = await rpcValidateInvite(code);
+    const t = String(v?.invite_type || v?.kind || "").toLowerCase();
     if (!v?.ok) return showError(empError, "Código inválido o expirado.");
-    if (String(v.invite_type || "").toLowerCase() !== "employee") {
-      return showError(empError, "Este código no es de empleado.");
-    }
+    if (t !== "employee") return showError(empError, "Este código no es de empleado.");
   } catch (e) {
     console.error(e);
     return showError(empError, "No se pudo validar el código (RPC). Revisa tu SQL/RLS.");
@@ -387,7 +359,7 @@ document.getElementById("btnEmployeeCreate")?.addEventListener("click", async ()
 
   const userId = data?.user?.id;
   if (!userId) {
-    return showError(empError, "Cuenta creada. Revisa tu correo para confirmar e inicia sesión.");
+    return showError(empError, "Cuenta creada ✅ Revisa tu correo para confirmar e inicia sesión.");
   }
 
   // 3) Reclamar invite
@@ -486,8 +458,24 @@ async function renderDoctorsTable() {
     .eq("role", "doctor")
     .order("created_at", { ascending: false });
 
-  if (error || !data?.length) {
-    doctorsTableBody.innerHTML = `<tr><td colspan="3" class="text-center small muted">Sin datos…</td></tr>`;
+  if (error) {
+    doctorsTableBody.innerHTML = `
+      <tr>
+        <td colspan="3" class="text-center small text-danger">
+          Error: ${escapeHtml(error.message)}
+        </td>
+      </tr>`;
+    console.error("profiles select error:", error);
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    doctorsTableBody.innerHTML = `
+      <tr>
+        <td colspan="3" class="text-center small muted">
+          Sin doctores…
+        </td>
+      </tr>`;
     return;
   }
 
@@ -513,52 +501,8 @@ async function renderDoctorsTable() {
 
 /* -------------------------
    ADMIN: generar invitaciones (RPC)
-   - create_invite(p_type, p_days) returns table(invite_code, expires_at)
-   - fallback: generate_invite(p_kind, p_days) returns text
+   - create_invite(p_kind, p_days) -> returns table(code, kind, expires_at) OR code
 -------------------------- */
-async function rpcCreateInviteSmart(type, days) {
-  // 1) Intenta create_invite (returns table)
-  {
-    const { data, error } = await supabase.rpc("create_invite", {
-      p_type: type,
-      p_days: days,
-    });
-
-    if (!error) {
-      const row = Array.isArray(data) ? data[0] : data;
-      // ✅ Soporta invite_code (nuevo) o code (viejo)
-      const code = row?.invite_code || row?.code;
-      if (code) return { code: String(code), expires_at: row?.expires_at || null };
-      // si no viene, caemos al fallback
-    } else {
-      // Si NO es "no existe", lo aventamos (ej: not allowed)
-      const msg = String(error.message || "");
-      const notFound =
-        msg.toLowerCase().includes("could not find") ||
-        msg.toLowerCase().includes("does not exist") ||
-        msg.toLowerCase().includes("not exist");
-
-      if (!notFound) throw error;
-    }
-  }
-
-  // 2) Fallback: generate_invite (returns text)
-  {
-    const { data, error } = await supabase.rpc("generate_invite", {
-      p_kind: type, // 'doctor' | 'employee'
-      p_days: days,
-    });
-
-    if (error) throw error;
-
-    if (typeof data === "string" && data.trim()) {
-      return { code: data.trim(), expires_at: null };
-    }
-
-    throw new Error("RPC generate_invite no devolvió código.");
-  }
-}
-
 async function guardIsAdmin() {
   const user = await getAuthUser();
   if (!user) return false;
@@ -571,6 +515,21 @@ function setInviteResult(msg, isError = false) {
   inviteResultWrap.classList.remove("d-none");
   inviteCodeResult.textContent = msg;
   inviteCodeResult.classList.toggle("text-danger", !!isError);
+}
+
+async function rpcCreateInvite(type, days) {
+  const { data, error } = await supabase.rpc("create_invite", {
+    p_kind: type, // ✅ correcto
+    p_days: days,
+  });
+
+  if (error) throw error;
+
+  const row = Array.isArray(data) ? data[0] : data;
+  const code = row?.code || row?.invite_code || (typeof data === "string" ? data : null);
+  if (!code) throw new Error("RPC create_invite no devolvió código.");
+
+  return { code: String(code), expires_at: row?.expires_at || null };
 }
 
 async function generateInvite(type) {
@@ -588,7 +547,7 @@ async function generateInvite(type) {
   const days = Math.max(1, parseInt(invDays?.value || "7", 10) || 7);
 
   try {
-    const res = await rpcCreateInviteSmart(type, days);
+    const res = await rpcCreateInvite(type, days);
     setInviteResult(res.code);
   } catch (e) {
     const msg = String(e?.message || e || "Error desconocido");

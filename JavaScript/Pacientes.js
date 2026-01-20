@@ -1,19 +1,15 @@
-/* =========================
-   PACIENTES — SOLO VISUALIZAR (CONNECTED) — DOCTOR READONLY
-   ========================= */
-
 const USERS_KEY = "orline_users";
 const SESSION_KEY = "orline_session";
 const DOCTOR_PROFILES_KEY = "orline_doctor_profiles";
 
-/* ✅ Pacientes oficiales creados desde Órdenes */
+/*  Pacientes oficiales creados desde Órdenes */
 const PATIENTS_KEY = "pos_patients_v1";
 
 /* Órdenes oficiales */
 const ORDERS_KEYS = ["orline_orders", "pos_orders_v1", "pos_orders"];
 
 /* =========================
-   ✅ MODO DOCTOR (solo lectura)
+    MODO DOCTOR (solo lectura)
    ========================= */
 const DOCTOR_READONLY = true;
 
@@ -241,8 +237,7 @@ function getAllOrdersAnyKey() {
   return [];
 }
 
-/* 🧠 Si por alguna razón no hay pacientes (data vieja),
-   reconstruye pacientes a partir de orline_orders */
+/* reconstruye pacientes a partir de órdenes si no hay */
 function rebuildPatientsFromOrdersIfNeeded() {
   const existing = getAllPatients();
   if (existing.length) return existing;
@@ -413,7 +408,6 @@ function renderDetail(p) {
 
   if (dStatusText) dStatusText.textContent = statusLabel(p.status);
 
-  // si existe select, lo mantenemos sincronizado pero bloqueado
   if (dStatus) {
     dStatus.value = p.status || "pending";
     if (isReadonly()) disableEl(dStatus);
@@ -500,7 +494,9 @@ function renderOrdersForPatient(p) {
         <td class="text-secondary">${escapeHtml(date)}</td>
         <td class="text-secondary">${escapeHtml(label)}</td>
         <td class="text-end">
-          <a class="btn btn-outline-light btn-sm" href="Dashboard.html" title="Ver en dashboard">Ver</a>
+          <button class="btn btn-outline-light btn-sm" type="button" data-act="viewOrder" data-id="${escapeHtml(o.id || "")}">
+            Ver
+          </button>
         </td>
       </tr>
     `;
@@ -516,7 +512,6 @@ function loadPatients() {
 }
 
 function savePatientsToStorage() {
-  // ✅ aun existiendo, en modo doctor no se debería guardar nada
   if (isReadonly()) return;
 
   const all = getAllPatients();
@@ -531,83 +526,6 @@ function selectPatient(id) {
   renderDetail(p);
 }
 
-function changeStatusSelected(newStatus) {
-  if (isReadonly()) return showBad("Sin permisos para cambiar el estado.");
-  const p = patients.find(x => x.id === selectedId);
-  if (!p) return;
-
-  p.status = newStatus;
-  p.updatedAt = nowISO();
-
-  p.followups = Array.isArray(p.followups) ? p.followups : [];
-  p.followups.unshift({
-    id: (crypto?.randomUUID ? crypto.randomUUID() : "f_" + Date.now()),
-    type: "status",
-    text: `Estado cambiado a: ${statusLabel(newStatus)}`,
-    date: "",
-    at: nowISO()
-  });
-
-  savePatientsToStorage();
-  showOk("Estado actualizado ✅");
-  renderDetail(p);
-  renderList();
-}
-
-function openFollowupModal() {
-  if (isReadonly()) return showBad("Sin permisos para agregar notas/seguimiento.");
-  if (!selectedId) return showBad("Selecciona un paciente primero.");
-  if (fuText) fuText.value = "";
-  if (fuDate) fuDate.value = "";
-  if (fuType) fuType.value = "note";
-  followupModal?.show();
-}
-
-function addFollowup() {
-  if (isReadonly()) return showBad("Sin permisos para agregar notas/seguimiento.");
-  const p = patients.find(x => x.id === selectedId);
-  if (!p) return;
-
-  const text = (fuText?.value || "").trim();
-  const date = (fuDate?.value || "").trim();
-  const type = (fuType?.value || "note");
-
-  if (text.length < 2) return showBad("Escribe un mensaje de seguimiento.");
-
-  p.followups = Array.isArray(p.followups) ? p.followups : [];
-  p.followups.unshift({
-    id: (crypto?.randomUUID ? crypto.randomUUID() : "f_" + Date.now()),
-    text, date, type, at: nowISO()
-  });
-
-  p.flags = p.flags || { urgent:false, missing:false, followup:false };
-  p.flags.followup = true;
-
-  p.updatedAt = nowISO();
-  savePatientsToStorage();
-
-  followupModal?.hide();
-  showOk("Seguimiento agregado 📝");
-  renderDetail(p);
-  renderList();
-}
-
-function deleteFollowup(followId) {
-  if (isReadonly()) return showBad("Sin permisos para eliminar seguimientos.");
-  const p = patients.find(x => x.id === selectedId);
-  if (!p) return;
-
-  p.followups = (p.followups || []).filter(f => f.id !== followId);
-  p.updatedAt = nowISO();
-
-  if (!p.followups.length) p.flags.followup = false;
-
-  savePatientsToStorage();
-  showOk("Seguimiento eliminado ✖️");
-  renderDetail(p);
-  renderList();
-}
-
 function toggleChip(name) {
   chipFilter[name] = !chipFilter[name];
   const btn = name === "urgent" ? chipUrgent : name === "missing" ? chipMissing : chipFollowup;
@@ -616,39 +534,6 @@ function toggleChip(name) {
     btn.classList.toggle("btn-soft", !chipFilter[name]);
   }
   renderList();
-}
-
-function exportPatientsCSV() {
-  if (isReadonly()) return showBad("Exportación desactivada para esta cuenta.");
-
-  const list = applyFiltersAndSort();
-  const rows = [["Nombre","Teléfono","Correo","Doctor","Estado","Urgente","FaltaInfo","Seguimiento","Notas","Actualizado"]];
-
-  for (const p of list) {
-    rows.push([
-      p.name || "", p.phone || "", p.email || "", p.doctor || "",
-      statusLabel(p.status),
-      p.flags?.urgent ? "Sí" : "No",
-      p.flags?.missing ? "Sí" : "No",
-      (p.flags?.followup || (p.followups?.length>0)) ? "Sí" : "No",
-      (p.notes || "").replace(/\n/g," "),
-      p.updatedAt || p.createdAt || ""
-    ]);
-  }
-
-  const csv = rows.map(r => r.map(v => `"${String(v).replaceAll('"','""')}"`).join(",")).join("\n");
-  const blob = new Blob([csv], { type:"text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `pacientes_${new Date().toISOString().slice(0,10)}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-
-  URL.revokeObjectURL(url);
-  showOk("Exportado 📦");
 }
 
 /* -------------------------
@@ -678,7 +563,25 @@ function wireLogout() {
    Events
 -------------------------- */
 function wireEvents() {
+  // ✅ BLOQUEO GLOBAL DE LINKS (para que no navegue a Dashboard por accidente)
+  document.addEventListener("click", (e) => {
+    if (!isReadonly()) return;
+    const a = e.target.closest("a[href]");
+    if (!a) return;
+    e.preventDefault();
+    e.stopPropagation();
+  }, true);
+
+  // ✅ Click listado: si das click en acciones internas, NO seleccionar paciente ni navegar
   patientsList?.addEventListener("click", (e) => {
+    const act = e.target.closest("[data-act]");
+    if (act) {
+      e.preventDefault();
+      e.stopPropagation();
+      showBad("Modo doctor: navegación desactivada.");
+      return;
+    }
+
     const btn = e.target.closest(".patient-item");
     if (!btn) return;
     const id = btn.getAttribute("data-id");
@@ -689,7 +592,7 @@ function wireEvents() {
   pFilterStatus?.addEventListener("change", () => renderList());
   pSort?.addEventListener("change", () => renderList());
 
-  // ✅ Doctor: ocultamos acciones
+  // Doctor: ocultamos acciones
   hideEl(btnNewPatient);
   hideEl(btnExportPatients);
   hideEl(btnEditPatient);
@@ -697,31 +600,24 @@ function wireEvents() {
   hideEl(btnAddFollowup);
   hideEl(btnSaveFollowup);
 
-  // Si el select existiera, se deshabilita
   if (dStatus) disableEl(dStatus);
 
-  // Chips/filtros sí permitidos
   chipUrgent?.addEventListener("click", () => toggleChip("urgent"));
   chipMissing?.addEventListener("click", () => toggleChip("missing"));
   chipFollowup?.addEventListener("click", () => toggleChip("followup"));
 
-  // Bloqueo extra por si existen botones en DOM
   btnEditPatient?.addEventListener("click", () => showBad("Edición desactivada."));
   btnDeletePatient?.addEventListener("click", () => showBad("Eliminación desactivada por seguridad."));
   btnAddNote?.addEventListener("click", () => showBad("Acción no permitida."));
   btnAddFollowup?.addEventListener("click", () => showBad("Acción no permitida."));
   btnSaveFollowup?.addEventListener("click", () => showBad("Acción no permitida."));
 
-  // ❌ NO enlazamos eventos de cambio estado / agregar / borrar seguimiento / exportar en modo doctor
-
-  // refresca pacientes cuando guardas una orden
   window.addEventListener("orline:ordersUpdated", () => {
     loadPatients();
     renderList();
     if (selectedId) renderDetail(patients.find(x => x.id === selectedId) || null);
   });
 
-  //  cuando cambie el storage (otra pestaña)
   window.addEventListener("storage", (e) => {
     if (!e?.key) return;
     if (e.key === PATIENTS_KEY || ORDERS_KEYS.includes(e.key)) {
