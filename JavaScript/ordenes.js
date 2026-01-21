@@ -1,13 +1,9 @@
-/* =========================
-   ORDENES (CREAR ORDEN) - FULL CONNECTED (FIXED)
-   ========================= */
-
 const ORDERS_KEY = "orline_orders";
 
-/* ✅ Pacientes “oficiales” para Pacientes.html */
+/*  Pacientes “oficiales” para Pacientes.html */
 const PATIENTS_KEY = "pos_patients_v1";
 
-/* ✅ Sesión unificada */
+/*  Sesión unificada */
 const SESSION_KEY = "orline_session";
 const LEGACY_SESSION_KEYS = ["pos_session"];
 
@@ -487,8 +483,8 @@ function openConfirmModal(payload) {
 }
 
 /* =========================
-   Bind UI ✅
-   ========================= */
+   Bind UI 
+   ======================== */
 function bindUI() {
   bindFlip();
   bindDots();
@@ -513,10 +509,10 @@ function bindUI() {
     const ok = await openConfirmModal(payload);
     if (!ok) return showMsg($("orderMsg"), "Listo, revisa la orden y vuelve a enviar.", 2500);
 
-    // ✅ AQUI ESTABA TU BUG: sí o sí hay que guardar
+    //  AQUI ESTABA TU BUG: sí o sí hay que guardar
     saveOrder(payload);
 
-    showMsg($("orderMsg"), "Orden guardada correctamente ✅", 2500);
+    showMsg($("orderMsg"), "Orden guardada correctamente ", 2500);
     setTimeout(resetForm, 450);
     setTimeout(fitBookHeight, 120);
   });
@@ -531,3 +527,61 @@ function bindUI() {
 }
 
 document.addEventListener("DOMContentLoaded", bindUI);
+
+function bindFlip() {
+  const btn = $("btnFlip");
+  const book = $("orderBook");
+  if (!btn || !book) return;
+
+  //  si el botón está dentro de <form> y no tiene type="button"
+  // al dar click hace submit y recarga → parece que "no voltea"
+  btn.setAttribute("type", "button");
+
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    book.classList.toggle("is-flipped");
+
+    const icon = btn.querySelector("i");
+    if (icon) {
+      icon.classList.toggle("bi-arrow-left-right");
+      icon.classList.toggle("bi-arrow-repeat");
+    }
+
+    btn.title = book.classList.contains("is-flipped") ? "Ver frente" : "Ver reverso";
+
+    //  mejor timing
+    requestAnimationFrame(() => fitBookHeight());
+    setTimeout(() => fitBookHeight(), 60);
+    setTimeout(() => fitBookHeight(), 520);
+  });
+}
+
+/* refuerzo: si por CSS/animación tarda en cargar, vuelve a medir */
+window.addEventListener("load", () => {
+  setTimeout(() => fitBookHeight(), 120);
+  setTimeout(() => fitBookHeight(), 600);
+});
+
+// Sólo si ya tienes supabase disponible global o importado como module
+async function getAuthUserSafe() {
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (error) return null;
+    return data?.user || null;
+  } catch {
+    return null;
+  }
+}
+
+async function getMyTeamIdSafe(userId) {
+  const { data, error } = await supabase
+    .from("team_members")
+    .select("team_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) return null;
+  return data?.team_id || null;
+}
+

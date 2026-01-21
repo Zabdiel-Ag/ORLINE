@@ -610,3 +610,71 @@ body.theme-light{
   .service-item,
   .select-item{ padding-bottom: 12px; }
 }
+
+/* =========================
+   EMPLEADO: DARK LEGIBILITY FIX (OVERRIDES)
+   ========================= */
+
+/* Fuerza texto claro en dark (sin afectar light) */
+html:not(.theme-light) body,
+html:not(.theme-light) .dash-body{
+  color: var(--txt) !important;
+}
+
+/* Títulos, labels y textos */
+html:not(.theme-light) h1,
+html:not(.theme-light) h2,
+html:not(.theme-light) h3,
+html:not(.theme-light) h4,
+html:not(.theme-light) h5,
+html:not(.theme-light) h6,
+html:not(.theme-light) .fw-bold,
+html:not(.theme-light) .fw-semibold,
+html:not(.theme-light) .fw-black{
+  color: var(--txt) !important;
+}
+
+/* Inputs/Select/Textarea: texto y placeholder legibles */
+html:not(.theme-light) .form-control,
+html:not(.theme-light) .form-select,
+html:not(.theme-light) .input-group-text{
+  color: var(--txt) !important;
+  border-color: var(--stroke) !important;
+}
+
+html:not(.theme-light) .form-control::placeholder{
+  color: var(--muted2) !important;
+  opacity: 1;
+}
+
+html:not(.theme-light) .form-select option{
+  color: #0b0f14; /* opciones del dropdown (porque el popup suele ser blanco) */
+}
+
+/* Tablas Bootstrap dark: fuerza legibilidad */
+html:not(.theme-light) .table{
+  color: var(--txt) !important;
+}
+html:not(.theme-light) .table thead th{
+  color: var(--txt) !important;
+}
+
+/* Links */
+html:not(.theme-light) a{
+  color: color-mix(in srgb, var(--txt) 92%, var(--accent) 8%) !important;
+}
+html:not(.theme-light) a:hover{
+  color: var(--txt) !important;
+}
+
+/* Alerts (que no se vean “gris apagado”) */
+html:not(.theme-light) .alert{
+  color: var(--txt) !important;
+  border-color: var(--stroke) !important;
+}
+
+/* Chips un poquito más contrastados */
+html:not(.theme-light) .chip{
+  background: color-mix(in srgb, var(--glass2) 92%, transparent) !important;
+  color: var(--txt) !important;
+}

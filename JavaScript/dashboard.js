@@ -1,9 +1,5 @@
-// JavaScript/dashboard.js
 import { supabase } from "./supabaseClient.js";
 
-/* =========================
-   CONFIG (solo aquí)
-========================= */
 const SESSION_LOGOUT_FLAG = "orline_logout";
 
 /* =========================

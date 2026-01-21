@@ -68,9 +68,7 @@
         </button>
 
         <div class="d-flex align-items-center justify-content-between mt-3">
-          <div class="small muted">
-            ¿No tienes cuenta?
-          </div>
+          <div class="small muted">¿No tienes cuenta?</div>
           <div class="small muted">
             <a id="goLoginFromVerify" class="text-decoration-none" href="javascript:void(0)">Ayuda</a>
           </div>
@@ -303,13 +301,14 @@
       </div>
     </section>
 
-    <!-- ADMIN PANEL -->
+    <!-- ADMIN PANEL (UPDATED) -->
     <section id="view-admin" class="w-100 d-none" style="max-width:1100px;">
       <div class="glass p-4 p-md-5">
+
         <div class="d-flex align-items-start justify-content-between gap-3 mb-4 flex-wrap">
           <div>
             <div class="h4 fw-bold mb-1">Panel Admin</div>
-            <div class="muted">Gestión de accesos y usuarios</div>
+            <div class="muted">Crea equipos (gabinetes) y genera códigos por equipo</div>
           </div>
           <div class="d-flex gap-2">
             <button id="btnRefreshDoctors" class="btn btn-soft" type="button">
@@ -321,86 +320,195 @@
           </div>
         </div>
 
-        <!-- Invitaciones -->
-        <div class="row g-3 mb-4">
-          <div class="col-12 col-lg-5">
-            <div class="p-3 rounded-4 h-100" style="background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);">
-              <div class="fw-semibold mb-2">Generar códigos</div>
+        <!-- Tabs -->
+        <ul class="nav nav-pills gap-2 mb-3" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="btn btn-soft active" data-bs-toggle="pill" data-bs-target="#tab-invites" type="button" role="tab">
+              <i class="bi bi-key me-2"></i>Invitaciones
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="btn btn-soft" data-bs-toggle="pill" data-bs-target="#tab-teams" type="button" role="tab">
+              <i class="bi bi-people me-2"></i>Equipos
+            </button>
+          </li>
+        </ul>
 
-              <div class="row g-2 align-items-end">
-                <div class="col-6">
-                  <label class="form-label small muted">Días de vigencia</label>
-                  <input id="invDays" class="form-control form-control-sm" type="number" min="1" value="7">
-                </div>
-                <div class="col-6">
-                  <label class="form-label small muted">Acción</label>
-                  <div class="d-grid gap-2">
-                    <button id="btnGenDoctorInvite" class="btn btn-soft btn-sm" type="button">
-                      <i class="bi bi-key me-2"></i> Código doctor
+        <div class="tab-content">
+
+          <!-- TAB: INVITES -->
+          <div class="tab-pane fade show active" id="tab-invites" role="tabpanel">
+
+            <div class="row g-3 mb-4">
+              <!-- Crear equipo -->
+              <div class="col-12 col-lg-5">
+                <div class="p-3 rounded-4 h-100" style="background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);">
+                  <div class="fw-semibold mb-2">
+                    <i class="bi bi-building-add me-2"></i>Crear gabinete / equipo
+                  </div>
+
+                  <div class="row g-2">
+                    <div class="col-12">
+                      <label class="form-label small muted">Nombre del equipo</label>
+                      <input id="teamName" class="form-control form-control-sm" type="text" placeholder="Ej: ScanDent" />
+                    </div>
+                    <div class="col-12">
+                      <label class="form-label small muted">Alias (opcional)</label>
+                      <input id="teamSlug" class="form-control form-control-sm" type="text" placeholder="Ej: SCANDENT" />
+                      <div class="form-text muted">Sirve para identificarlo internamente.</div>
+                    </div>
+                    <div class="col-12">
+                      <label class="form-label small muted">Notas (opcional)</label>
+                      <textarea id="teamNotes" class="form-control form-control-sm" rows="2" placeholder="Ej: Gabinete principal / CBCT / etc..."></textarea>
+                    </div>
+                  </div>
+
+                  <div id="teamError" class="alert alert-danger py-2 d-none mt-3 mb-0"></div>
+                  <div id="teamOk" class="alert alert-success py-2 d-none mt-3 mb-0"></div>
+
+                  <div class="d-grid mt-3">
+                    <button id="btnCreateTeam" class="btn btn-primary btn-sm" type="button">
+                      <i class="bi bi-check2-circle me-2"></i>Crear equipo
                     </button>
-                    <button id="btnGenEmployeeInvite" class="btn btn-soft btn-sm" type="button">
-                      <i class="bi bi-qr-code me-2"></i> Código empleado
-                    </button>
+                  </div>
+
+                  <hr class="my-3" style="opacity:.12">
+
+                  <div class="small muted">
+                    Después podrás generar códigos para ese equipo 👇
                   </div>
                 </div>
               </div>
 
-              <div id="inviteResultWrap" class="alert alert-success py-2 d-none mt-3 mb-0">
-                Código generado:
-                <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
-                  <strong id="inviteCodeResult" class="me-auto"></strong>
-                  <button id="btnCopyInvite" class="btn btn-soft btn-sm" type="button">
-                    <i class="bi bi-clipboard me-2"></i> Copiar
-                  </button>
-                </div>
-                <div class="small muted mt-2">
-                  Puedes compartirlo por WhatsApp o pegarlo en un QR.
+              <!-- Generar códigos -->
+              <div class="col-12 col-lg-7">
+                <div class="p-3 rounded-4 h-100" style="background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);">
+                  <div class="fw-semibold mb-2">
+                    <i class="bi bi-qr-code me-2"></i>Generar códigos por equipo
+                  </div>
+
+                  <div class="row g-2 align-items-end">
+                    <div class="col-12 col-md-6">
+                      <label class="form-label small muted">Equipo</label>
+                      <select id="teamSelect" class="form-select form-select-sm">
+                        <option value="">Cargando equipos…</option>
+                      </select>
+                      <div class="form-text muted">El código quedará ligado a este equipo.</div>
+                    </div>
+
+                    <div class="col-6 col-md-3">
+                      <label class="form-label small muted">Vigencia (días)</label>
+                      <input id="invDays" class="form-control form-control-sm" type="number" min="1" value="7">
+                    </div>
+
+                    <div class="col-6 col-md-3">
+                      <label class="form-label small muted">Acción</label>
+                      <div class="d-grid gap-2">
+                        <button id="btnGenDoctorInvite" class="btn btn-soft btn-sm" type="button">
+                          <i class="bi bi-key me-2"></i>Doctor
+                        </button>
+                        <button id="btnGenEmployeeInvite" class="btn btn-soft btn-sm" type="button">
+                          <i class="bi bi-qr-code me-2"></i>Empleado
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div id="inviteResultWrap" class="alert alert-success py-2 d-none mt-3 mb-0">
+                    Código generado:
+                    <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
+                      <strong id="inviteCodeResult" class="me-auto"></strong>
+                      <button id="btnCopyInvite" class="btn btn-soft btn-sm" type="button">
+                        <i class="bi bi-clipboard me-2"></i> Copiar
+                      </button>
+                      <button id="btnMakeQr" class="btn btn-soft btn-sm" type="button">
+                        <i class="bi bi-qr-code me-2"></i> QR
+                      </button>
+                    </div>
+                    <div class="small muted mt-2">
+                      Puedes compartirlo por WhatsApp o pegarlo en un QR.
+                    </div>
+                    <div id="qrWrap" class="d-none mt-3 text-center"></div>
+                  </div>
+
+                  <div class="mt-3 small muted">
+                    <ul class="mb-0">
+                      <li>Doctores: código <b>OR-xxxxx</b></li>
+                      <li>Empleados: código <b>EMP-xxxxx</b></li>
+                      <li>Se valida con <code>validate_invite</code> y se reclama con <code>claim_invite</code>.</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </div>
+
+            <!-- Tabla doctores -->
+            <div class="p-3 rounded-4" style="background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);">
+              <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+                <div class="fw-semibold">Doctores registrados</div>
+                <div class="small muted">Listado desde <code>profiles</code> (role=doctor)</div>
+              </div>
+
+              <div class="table-responsive">
+                <table class="table table-dark table-striped align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th>Doctor</th>
+                      <th>Consultorio</th>
+                      <th class="text-end">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="doctorsTableBody">
+                    <tr>
+                      <td colspan="3" class="text-center small muted">Sin datos aún…</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
           </div>
 
-          <div class="col-12 col-lg-7">
-            <div class="p-3 rounded-4 h-100" style="background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);">
-              <div class="fw-semibold mb-2">Notas</div>
-              <ul class="small muted mb-0">
-                <li>Los doctores se registran con código OR-xxxxx.</li>
-                <li>Los empleados se activan con código EMP-xxxxx.</li>
-                <li>Los códigos se validan con <code>validate_invite</code> y se reclaman con <code>claim_invite</code>.</li>
-              </ul>
+          <!-- TAB: TEAMS -->
+          <div class="tab-pane fade" id="tab-teams" role="tabpanel">
+            <div class="p-3 rounded-4" style="background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);">
+              <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+                <div class="fw-semibold">Equipos / Gabinetes</div>
+                <button id="btnRefreshTeams" class="btn btn-soft btn-sm" type="button">
+                  <i class="bi bi-arrow-clockwise me-2"></i>Actualizar equipos
+                </button>
+              </div>
+              <div class="small muted mb-3">
+                Aquí puedes ver tus equipos. (El <code>team_id</code> sirve para ligar invitaciones)
+              </div>
+
+              <div class="table-responsive">
+                <table class="table table-dark table-striped align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th>Equipo</th>
+                      <th class="d-none d-lg-table-cell">Alias</th>
+                      <th class="d-none d-lg-table-cell">Notas</th>
+                      <th class="text-end">team_id</th>
+                    </tr>
+                  </thead>
+                  <tbody id="teamsTableBody">
+                    <tr>
+                      <td colspan="4" class="text-center small muted">Sin equipos aún…</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
             </div>
           </div>
-        </div>
 
-        <!-- Tabla doctores -->
-        <div class="p-3 rounded-4" style="background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);">
-          <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
-            <div class="fw-semibold">Doctores registrados</div>
-            <div class="small muted">Listado desde <code>profiles</code> (role=doctor)</div>
-          </div>
-
-          <div class="table-responsive">
-            <table class="table table-dark table-striped align-middle mb-0">
-              <thead>
-                <tr>
-                  <th>Doctor</th>
-                  <th>Consultorio</th>
-                  <th class="text-end">Acciones</th>
-                </tr>
-              </thead>
-              <tbody id="doctorsTableBody">
-                <tr>
-                  <td colspan="3" class="text-center small muted">Sin datos aún…</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
         </div>
 
       </div>
     </section>
 
-    <!-- VERIFY (si lo usas luego) -->
+    <!-- VERIFY -->
     <section id="view-verify" class="w-100 d-none" style="max-width:520px;">
       <div class="glass p-4 p-md-5">
         <div class="d-flex align-items-center justify-content-between mb-3">
@@ -427,7 +535,13 @@
 
   </div>
 
+  <!-- libs -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- qr (solo para admin, opcional, mini librería) -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+  <!-- app -->
   <script type="module" src="JavaScript/Script.js"></script>
 </body>
 </html>
