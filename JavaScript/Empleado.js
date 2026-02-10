@@ -1,7 +1,4 @@
 import { supabase } from "./supabaseClient.js";
-
-
-
 const STATUS = ["pending", "process", "ready", "delivered"];
 const BUCKET = "orline-orders";
 
@@ -27,6 +24,61 @@ function escapeHtml(str) {
 function fmtDate(iso) {
   if (!iso) return "—";
   try { return new Date(iso).toLocaleString("es-MX"); } catch { return "—"; }
+}
+
+function filenameFromUrl(url) {
+  try {
+    const clean = url.split("?")[0];
+    const parts = clean.split("/");
+    return decodeURIComponent(parts[parts.length - 1]);
+  } catch {
+    return "Archivo";
+  }
+}
+ 
+
+async function forceDownload(url) {
+  try {
+    // Intenta bajar con fetch (solo si CORS lo permite)
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("No se pudo descargar.");
+
+    const blob = await res.blob();
+    const filename = filenameFromUrl(url) || "archivo";
+
+    const blobUrl = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = filename;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    URL.revokeObjectURL(blobUrl);
+  } catch (e) {
+    // Fallback: abrir la URL (si el server no deja fetch por CORS)
+    const a = document.createElement("a");
+    a.href = url;
+    a.target = "_blank";
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+}
+
+function shortDate(iso) {
+  try {
+    return new Date(iso).toLocaleDateString("es-MX", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric"
+    });
+  } catch {
+    return "";
+  }
 }
 
 /* ---------- UI messages ---------- */
@@ -105,7 +157,6 @@ async function getMyTeamId(userId) {
   return data?.team_id || null;
 }
 
-
 async function getTeamName(teamId) {
   try {
     const cachedId = clean(localStorage.getItem("orline_team_id"));
@@ -132,7 +183,7 @@ async function getTeamName(teamId) {
     return "Equipo";
   }
 }
-
+ 
 async function guardEmployee() {
   const user = await getUser();
   if (!user) return { ok: false, reason: "No hay sesión. Inicia sesión." };
@@ -159,6 +210,7 @@ const ORDER_SELECT_SAFE = `
   id, doctor_id, team_id,
   patient_name, patient_phone, patient_email,
   folio, status, notes,
+  study,
   created_at, updated_at
 `;
 
@@ -166,10 +218,12 @@ const ORDER_SELECT_FULL = `
   id, doctor_id, team_id,
   patient_name, patient_phone, patient_email,
   folio, status, notes,
-  created_at, updated_at,
-  doctor_name, doctor_clinic,
-  study, doctor_notes
+  study, study_blocks, study_label, study_details,
+  created_at, updated_at
 `;
+
+
+
 
 async function fetchOrdersByTeam(teamId) {
   const full = await supabase
@@ -569,6 +623,22 @@ function setDetailLoading(on) {
   if (on) el.textContent = "Cargando…";
 }
 
+async function fetchDoctorProfile(doctorId) {
+  if (!doctorId) return null;
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, display_name, clinic_name, phone")
+    .eq("id", doctorId)
+    .maybeSingle();
+
+  if (error) {
+    console.warn("No pude leer profile del doctor:", error.message);
+    return null;
+  }
+  return data || null;
+}
+
 async function renderLinks(orderId) {
   const list = $("orderFilesList");
   const empty = $("orderFilesEmpty");
@@ -584,18 +654,33 @@ async function renderLinks(orderId) {
   if (empty) empty.classList.add("d-none");
 
   list.innerHTML = links.map(l => {
-    const title = l.title || "Archivo";
+    const patient = clean(CURRENT_ORDER?.patient_name);
+    const date = shortDate(l.created_at);
+
     return `
       <div class="cardx p-2 d-flex align-items-center justify-content-between gap-2">
         <div class="min-w-0">
-          <div class="fw-semibold small text-truncate">${escapeHtml(title)}</div>
-          <div class="muted tiny text-truncate">${escapeHtml(l.url)}</div>
+          <div class="fw-semibold small">
+            Archivo
+            ${patient ? `• ${escapeHtml(patient)}` : ""}
+            ${date ? `• ${date}` : ""}
+          </div>
+          <div class="muted tiny">
+            <i class="bi bi-cloud-check"></i> Archivo guardado
+          </div>
         </div>
+
         <div class="d-flex gap-2">
-          <a class="btn btn-soft py-1 px-3" href="${escapeHtml(l.url)}" target="_blank" rel="noopener">
-            <i class="bi bi-box-arrow-up-right me-1"></i>Abrir
-          </a>
-          <button class="btn btn-danger btn-sm" type="button" data-del="${escapeHtml(l.id)}" title="Borrar link">
+          <button class="btn btn-soft py-1 px-3"
+                  type="button"
+                  data-dl="${escapeHtml(l.url)}">
+            <i class="bi bi-download me-1"></i>Descargar
+          </button>
+
+          <button class="btn btn-danger btn-sm"
+                  type="button"
+                  data-del="${escapeHtml(l.id)}"
+                  title="Borrar archivo">
             <i class="bi bi-trash"></i>
           </button>
         </div>
@@ -603,7 +688,18 @@ async function renderLinks(orderId) {
     `;
   }).join("");
 
-  // Delegación para borrar (sin listeners por item)
+  // Listener Descargar
+  list.querySelectorAll("button[data-dl]").forEach(btn => {
+    btn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const url = btn.getAttribute("data-dl");
+      if (!url) return;
+      await forceDownload(url);
+    });
+  });
+
+  // Listener borrar
   list.querySelectorAll("button[data-del]").forEach(btn => {
     btn.addEventListener("click", async (e) => {
       e.preventDefault();
@@ -614,7 +710,7 @@ async function renderLinks(orderId) {
         hideErr();
         await deleteOrderLink(id);
         await renderLinks(orderId);
-        showMsg("Link borrado ;)");
+        showMsg("Archivo borrado ;)");
       } catch (err) {
         console.error(err);
         showErr(err?.message || "No se pudo borrar.");
@@ -623,8 +719,54 @@ async function renderLinks(orderId) {
   });
 }
 
+function stripReferred(study) {
+  const s = String(study ?? "").trim();
+  if (!s) return "";
+
+  // Quita " | Referido: ..." o " Referido: ..."
+  return s
+    .replace(/\s*\|\s*referido\s*:\s*.*$/i, "")
+    .replace(/\s*referido\s*:\s*.*$/i, "")
+    .trim();
+}
 
 
+
+function prettyDoctorNotes(raw) {
+  const s = String(raw ?? "").trim();
+  if (!s) return "—";
+
+  if (s.startsWith("__DETAILS__:")) {
+    const jsonStr = s.slice("__DETAILS__:".length).trim();
+    try {
+      const obj = JSON.parse(jsonStr);
+      const lines = [];
+
+      if (obj?.selections?.active?.length) {
+        lines.push(`Estudios: ${obj.selections.active.join(", ")}`);
+      }
+
+      const rxItems = obj?.selections?.details?.rx?.items || [];
+      if (rxItems.length) {
+        lines.push(`RX: ${rxItems.join(", ")}`);
+      }
+
+      if (obj?.delivery?.method) {
+        const target = obj?.delivery?.target ? ` → ${obj.delivery.target}` : "";
+        lines.push(`Entrega: ${obj.delivery.method}${target}`);
+      }
+
+      return lines.length ? lines.join(" • ") : "—";
+    } catch (e) {
+      console.error("Notas inválidas:", e);
+      return "Notas del doctor";
+    }
+  }
+
+  return s;
+}
+
+/* MOVÍ ESTA FUNCIÓN ARRIBA, ANTES DE openOrderDetail */
 function renderOrderDetail(order) {
   if (!order) return;
 
@@ -640,8 +782,8 @@ function renderOrderDetail(order) {
   setTextSafe("odDoctorName", order.doctor_name || "Doctor");
   setTextSafe("odDoctorClinic", order.doctor_clinic || "—");
 
-  setTextSafe("odStudy", order.study || "—");
-  setTextSafe("odNotesDoctor", order.doctor_notes || "—");
+  setTextSafe("odStudy", stripReferred(order.study) || "—");
+  setTextSafe("odNotesDoctor", prettyDoctorNotes(order.doctor_notes));
 
   const sel = $("odStatus");
   if (sel) sel.value = STATUS.includes(order.status) ? order.status : "pending";
@@ -651,11 +793,10 @@ function renderOrderDetail(order) {
   if (notes) notes.value = order.notes || "";
 
   setSelectedMini(order);
-
-  // permisos de subida según status
   syncUploadUIByStatus();
 }
 
+/*  DEJÉ SOLO UNA openOrderDetail */
 async function openOrderDetail(orderId) {
   hideErr();
   if (!orderId) return;
@@ -677,8 +818,22 @@ async function openOrderDetail(orderId) {
     if (idx >= 0) ORDERS_CACHE[idx] = { ...ORDERS_CACHE[idx], ...order };
     else ORDERS_CACHE.unshift(order);
 
+    // 1) pinta base
     renderOrderDetail(order);
+
+    // 2) trae profile doctor y pisa lo que falte
+    const dp = await fetchDoctorProfile(order.doctor_id);
+    if (dp) {
+      const dn = dp.display_name ? `Dr. ${dp.display_name}` : "Doctor";
+      setTextSafe("odDoctorName", dn);
+
+      const secondLine = dp.phone || dp.clinic_name || "—";
+      setTextSafe("odDoctorClinic", secondLine);
+    }
+
+    // 3) links
     await renderLinks(order.id);
+
   } catch (err) {
     console.error(err);
     showErr(err?.message || "No se pudo abrir la orden.");
@@ -707,7 +862,6 @@ function bindSaveChanges() {
       await updateOrder(CURRENT_ORDER.id, { status, notes });
       showMsg("Guardado :)");
 
-      // refresca lista y detalle
       await refreshOrders(false);
       await openOrderDetail(CURRENT_ORDER.id);
       renderOrdersList(applyFilterSort(ORDERS_CACHE));
@@ -725,7 +879,6 @@ function bindDropzone() {
   if (!dz || !fp || dz.dataset.bound) return;
   dz.dataset.bound = "1";
 
-  // Recomendado: en HTML => accept="image/*,.txt" multiple
   dz.addEventListener("click", () => {
     const allow = canUploadForCurrentOrder();
     if (!allow.ok) return showErr(allow.reason);
@@ -872,15 +1025,15 @@ async function refreshOrders(clearSelection = false) {
   }
 }
 
-getMyTeamId
-
 /* ---------- Init ---------- */
 async function initEmployee() {
   try {
     hideErr();
 
     const g = await guardEmployee();
-    if (!g.ok) return showErr(g.reason);
+    if (!g?.ok) return showErr(g?.reason || "No hay sesión. Inicia sesión.");
+
+    if (!g.user?.id) return showErr("Sesión inválida: vuelve a iniciar sesión.");
 
     MY_TEAM_ID = await getMyTeamId(g.user.id);
     if (!MY_TEAM_ID) return showErr("Tu usuario no está vinculado a un team (team_members).");
@@ -893,6 +1046,12 @@ async function initEmployee() {
     bindSaveChanges();
     bindDropzone();
     bindLogout();
+
+    const ni = document.getElementById("odInternalNotes");
+    if (ni) {
+      const card = ni.closest(".cardx") || ni.closest(".card") || ni.parentElement;
+      if (card) card.classList.add("d-none");
+    }
 
     await refreshOrders(true);
     showDetail(false);

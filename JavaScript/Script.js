@@ -17,7 +17,7 @@ function hideError(el) {
 }
 function showOk(el, msg) {
   if (!el) return;
-  el.textContent = msg || "Listo ✅";
+  el.textContent = msg || "Listo :)";
   el.classList.remove("d-none");
 }
 function hideOk(el) {
@@ -538,7 +538,7 @@ btnCreateTeam?.addEventListener("click", async () => {
     const { error } = await supabase.from("teams").insert([{ name }]);
     if (error) throw error;
 
-    showOk(teamOk, `Equipo creado ✅ (${name})`);
+    showOk(teamOk, `Equipo creado ;) (${name})`);
     if (teamName) teamName.value = "";
     if (teamSlug) teamSlug.value = "";
     if (teamNotes) teamNotes.value = "";
