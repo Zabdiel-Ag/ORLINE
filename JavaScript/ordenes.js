@@ -1,15 +1,16 @@
+// JavaScript/ordenes.js
+import { supabase } from "./supabaseClient.js";
+
+/* =========================
+   KEYS (legacy local)
+========================= */
 const ORDERS_KEY = "orline_orders";
-
-/*  Pacientes “oficiales” para Pacientes.html */
 const PATIENTS_KEY = "pos_patients_v1";
-
-/*  Sesión unificada */
 const SESSION_KEY = "orline_session";
-const LEGACY_SESSION_KEYS = ["pos_session"];
 
 /* =========================
    Helpers
-   ========================= */
+========================= */
 function safeJSON(key, fallback) {
   try {
     const raw = localStorage.getItem(key);
@@ -40,10 +41,16 @@ function hideMsg(el) {
   el.textContent = "";
   el.classList.add("d-none");
 }
+function escapeHtml(s) {
+  return String(s ?? "")
+    .replaceAll("&","&amp;").replaceAll("<","&lt;")
+    .replaceAll(">","&gt;").replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
 
 /* =========================
    INPUT: SOLO NÚMEROS (tel)
-   ========================= */
+========================= */
 function onlyDigits(str) {
   return String(str || "").replace(/\D+/g, "");
 }
@@ -74,13 +81,18 @@ function bindPhoneOnlyNumbers() {
 
 /* =========================
    FLIP (FRONT/BACK) + HEIGHT
-   ========================= */
+========================= */
 function bindFlip() {
   const btn = $("btnFlip");
   const book = $("orderBook");
   if (!btn || !book) return;
 
-  btn.addEventListener("click", () => {
+  btn.setAttribute("type", "button");
+
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
     book.classList.toggle("is-flipped");
 
     const icon = btn.querySelector("i");
@@ -90,6 +102,8 @@ function bindFlip() {
     }
 
     btn.title = book.classList.contains("is-flipped") ? "Ver frente" : "Ver reverso";
+
+    requestAnimationFrame(fitBookHeight);
     setTimeout(fitBookHeight, 60);
     setTimeout(fitBookHeight, 520);
   });
@@ -133,49 +147,8 @@ function fitBookHeight() {
 }
 
 /* =========================
-   TOGGLE CARDS
-   ========================= */
-function toggleCard(cardId) {
-  const card = document.querySelector(`.order-card[data-card="${cardId}"]`);
-  if (!card) return;
-
-  card.classList.toggle("is-active");
-
-  if (!card.classList.contains("is-active")) {
-    card.querySelectorAll('input[type="checkbox"], input[type="radio"]').forEach(i => i.checked = false);
-    card.querySelectorAll('input[type="text"]').forEach(i => i.value = "");
-  }
-  setTimeout(fitBookHeight, 30);
-}
-function getActiveCards() {
-  return Array.from(document.querySelectorAll(".order-card.is-active"))
-    .map(x => x.getAttribute("data-card"))
-    .filter(Boolean);
-}
-function bindDots() {
-  document.querySelectorAll("[data-toggle-card]").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const id = btn.getAttribute("data-toggle-card");
-      if (id) toggleCard(id);
-    });
-  });
-}
-function bindCardClick() {
-  document.addEventListener("click", (e) => {
-    const card = e.target.closest(".order-card");
-    if (!card) return;
-    if (e.target.closest("input, label, textarea, select, a, button")) return;
-
-    const key = card.getAttribute("data-card");
-    if (key) toggleCard(key);
-  });
-}
-
-/* =========================
    BACK UI STATE (CT + DIENTES)
-   ========================= */
+========================= */
 const BackState = { ct: "", teeth: new Set() };
 
 function initBackUI() {
@@ -245,19 +218,278 @@ function initBackUI() {
 
 /* =========================
    LABELS
-   ========================= */
+========================= */
 const LABELS = {
-  ort3d: "Ortodoncia 3D",
-  ort2d: "Ortodoncia 2D",
-  rx: "Radiografías",
-  photos: "Fotografías",
+  ort3d: "Estudio Ortodoncia 3D",
+  ort2d: "Estudio Ortodoncia 2D",
+  rx: "Radiografías Digitales",
+  photos: "Fotografías Intra/Extraorales",
   scan: "Escaneo Intraoral",
   print3d: "Impresión 3D"
 };
 
 /* =========================
-   BUILD PAYLOAD
-   ========================= */
+   ✅ SINGLE ACTIVE BLOCK LOGIC
+========================= */
+function getCards() {
+  return Array.from(document.querySelectorAll(".order-card"));
+}
+function getCardById(cardId) {
+  return document.querySelector(`.order-card[data-card="${cardId}"]`);
+}
+function getActiveCardId() {
+  const c = document.querySelector(".order-card.is-active");
+  return c ? c.getAttribute("data-card") : "";
+}
+function setCardsDisabledExcept(activeId) {
+  const cards = getCards();
+  cards.forEach(card => {
+    const id = card.getAttribute("data-card");
+    if (!activeId) {
+      card.classList.remove("is-disabled");
+      return;
+    }
+    if (id !== activeId) card.classList.add("is-disabled");
+    else card.classList.remove("is-disabled");
+  });
+}
+
+/* =========================
+   Preview UI (data-picked="id")
+========================= */
+function setPickedText(cardId, text) {
+  const el = document.querySelector(`[data-picked="${cardId}"]`);
+  if (!el) return;
+  el.textContent = text || "—";
+}
+function clearPickedAll() {
+  Object.keys(LABELS).forEach(k => setPickedText(k, "—"));
+}
+
+/* =========================
+   Read selections inside card
+========================= */
+function getCardDetails(cardId) {
+  const card = getCardById(cardId);
+  if (!card) return {};
+
+  const d = {};
+
+  // radios (name=...): uno por grupo
+  const radios = card.querySelectorAll('input[type="radio"]:checked');
+  radios.forEach(r => { d[r.name] = r.value; });
+
+  // checkboxes por data-check
+  const checks = card.querySelectorAll('input[type="checkbox"]:checked');
+  if (checks.length) {
+    const groups = {};
+    checks.forEach(c => {
+      const g = c.getAttribute("data-check") || "checks";
+      if (!groups[g]) groups[g] = [];
+      groups[g].push(c.value);
+    });
+    Object.assign(d, groups);
+  }
+
+  // text inputs con data-field
+  const texts = card.querySelectorAll('input[type="text"][data-field], textarea[data-field]');
+  texts.forEach(t => {
+    const k = t.getAttribute("data-field");
+    const v = String(t.value || "").trim();
+    if (k) d[k] = v; // guardamos aunque esté vacío para consistencia
+  });
+
+  // Normalización por tipo para que sea fácil armar el estudio
+  if (cardId === "rx") {
+    d.items = d.rx_items || [];
+    d.notes = d.rx_notes || "";
+    delete d.rx_items; delete d.rx_notes;
+  }
+  if (cardId === "photos") {
+    d.items = d.photo_items || [];
+    d.notes = d.photos_notes || "";
+    delete d.photo_items; delete d.photos_notes;
+  }
+  if (cardId === "scan") {
+    d.scope = d.scan_scope || "";
+    d.specs = d.scan_specs || "";
+    delete d.scan_scope; delete d.scan_specs;
+  }
+  if (cardId === "print3d") {
+    d.base  = d.print_base || "";
+    d.scope = d.print_scope || "";
+    d.specs = d.print_specs || "";
+    delete d.print_base; delete d.print_scope; delete d.print_specs;
+  }
+  if (cardId === "ort3d") {
+    d.trazado = d.ort3d_trazado || "";
+    d.specs   = d.ort3d_specs || "";
+    delete d.ort3d_trazado; delete d.ort3d_specs;
+  }
+  if (cardId === "ort2d") {
+    d.trazado = d.ort2d_trazado || "";
+    d.specs   = d.ort2d_specs || "";
+    delete d.ort2d_trazado; delete d.ort2d_specs;
+  }
+
+  return d;
+}
+
+function buildPickedPreview(cardId, details) {
+  if (!details) return "—";
+
+  if (cardId === "rx" || cardId === "photos") {
+    const items = (details.items || []).filter(Boolean);
+    const notes = String(details.notes || "").trim();
+    if (!items.length && !notes) return "—";
+    return items.length ? items.join(", ") : (notes ? "Con observaciones" : "—");
+  }
+
+  if (cardId === "scan") {
+    const parts = [details.scope, details.specs].map(x => String(x||"").trim()).filter(Boolean);
+    return parts.length ? parts.join(" • ") : "—";
+  }
+
+  if (cardId === "print3d") {
+    const parts = [details.base, details.scope, details.specs].map(x => String(x||"").trim()).filter(Boolean);
+    return parts.length ? parts.join(" • ") : "—";
+  }
+
+  if (cardId === "ort3d" || cardId === "ort2d") {
+    const parts = [];
+    if (details.trazado) parts.push(`Trazado ${details.trazado}`);
+    if (String(details.specs || "").trim()) parts.push(details.specs);
+    return parts.length ? parts.join(" • ") : "—";
+  }
+
+  return "—";
+}
+
+/* =========================
+   Toggle card (single active)
+========================= */
+function clearCardInputs(card) {
+  if (!card) return;
+  card.querySelectorAll('input[type="checkbox"], input[type="radio"]').forEach(i => i.checked = false);
+  card.querySelectorAll('input[type="text"]').forEach(i => i.value = "");
+  card.querySelectorAll("textarea").forEach(t => t.value = "");
+}
+
+function toggleCard(cardId) {
+  const card = getCardById(cardId);
+  if (!card) return;
+
+  const isActive = card.classList.contains("is-active");
+
+  // Si estaba activa → desactivar, limpiar y re-habilitar todo
+  if (isActive) {
+    card.classList.remove("is-active");
+    clearCardInputs(card);
+    setPickedText(cardId, "—");
+    setCardsDisabledExcept("");
+    setTimeout(fitBookHeight, 30);
+    return;
+  }
+
+  // Activar una nueva: apagar cualquier activa previa
+  getCards().forEach(c => {
+    if (c.classList.contains("is-active")) {
+      const cid = c.getAttribute("data-card");
+      c.classList.remove("is-active");
+      clearCardInputs(c);
+      if (cid) setPickedText(cid, "—");
+    }
+  });
+
+  card.classList.add("is-active");
+  setCardsDisabledExcept(cardId);
+  setPickedText(cardId, "Selecciona opciones…");
+  setTimeout(fitBookHeight, 30);
+}
+
+function bindDots() {
+  document.querySelectorAll("[data-toggle-card]").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const id = btn.getAttribute("data-toggle-card");
+      if (id) toggleCard(id);
+    });
+  });
+}
+
+function bindCardClick() {
+  document.addEventListener("click", (e) => {
+    const card = e.target.closest(".order-card");
+    if (!card) return;
+    if (e.target.closest("input, label, textarea, select, a, button")) return;
+
+    const key = card.getAttribute("data-card");
+    if (key) toggleCard(key);
+  });
+}
+
+/* =========================
+   Live preview when picking
+========================= */
+function bindPickedPreviewLive() {
+  const update = (card) => {
+    const cardId = card?.getAttribute("data-card");
+    if (!cardId) return;
+    const details = getCardDetails(cardId);
+    const preview = buildPickedPreview(cardId, details);
+    setPickedText(cardId, preview);
+  };
+
+  document.addEventListener("input", (e) => {
+    const card = e.target.closest(".order-card.is-active");
+    if (!card) return;
+    update(card);
+  });
+
+  document.addEventListener("change", (e) => {
+    const card = e.target.closest(".order-card.is-active");
+    if (!card) return;
+    update(card);
+  });
+}
+
+/* =========================
+   BUILD: Estudio bonito + payload
+========================= */
+function buildStudyLine(payload) {
+  const active = payload?.selections?.active?.[0] || "";
+  const title = active ? (LABELS[active] || active) : "—";
+  const d = active ? (payload?.selections?.details?.[active] || {}) : {};
+  const referido = String(payload?.referred?.doctor || "").trim() || "—";
+
+  let studyText = title;
+
+  if (active === "rx" || active === "photos") {
+    const items = (d.items || []).filter(Boolean);
+    const notes = String(d.notes || "").trim();
+    if (items.length) studyText = `${title}: ${items.join(", ")}`;
+    else if (notes) studyText = `${title}: (con observaciones)`;
+  }
+  else if (active === "scan") {
+    const parts = [d.scope, d.specs].map(x => String(x||"").trim()).filter(Boolean);
+    if (parts.length) studyText = `${title}: ${parts.join(" • ")}`;
+  }
+  else if (active === "print3d") {
+    const parts = [d.base, d.scope, d.specs].map(x => String(x||"").trim()).filter(Boolean);
+    if (parts.length) studyText = `${title}: ${parts.join(" • ")}`;
+  }
+  else if (active === "ort3d" || active === "ort2d") {
+    const parts = [];
+    if (String(d.trazado || "").trim()) parts.push(`Trazado ${d.trazado}`);
+    if (String(d.specs || "").trim()) parts.push(d.specs);
+    if (parts.length) studyText = `${title}: ${parts.join(" • ")}`;
+  }
+
+  // ✅ EXACTO como pediste
+  return `Estudio: ${studyText} | Referido: ${referido}`;
+}
+
 function buildOrderPayload() {
   const sess = getSessionAny() || {};
   const bizId = (sess.bizId || sess.orgId || sess.businessId || "ORLINE_MAIN");
@@ -267,7 +499,8 @@ function buildOrderPayload() {
     phone: onlyDigits($("pPhone")?.value || ""),
     age: String($("pAge")?.value || "").trim(),
     dob: String($("pDob")?.value || "").trim(),
-    address: String($("pAddress")?.value || "").trim()
+    address: String($("pAddress")?.value || "").trim(),
+    email: ""
   };
 
   const referred = {
@@ -277,10 +510,14 @@ function buildOrderPayload() {
     email: String($("refEmail")?.value || "").trim()
   };
 
-  const activeArr = Array.from(new Set(getActiveCards()));
-  const studyNice = activeArr.length ? activeArr.map(k => (LABELS[k] || k)).join(" + ") : "—";
+  const notes = String($("docNotes")?.value || "").trim();
 
-  return {
+  // ✅ Single active card
+  const activeId = getActiveCardId();
+  const activeArr = activeId ? [activeId] : [];
+  const detailsObj = activeId ? { [activeId]: getCardDetails(activeId) } : {};
+
+  const payload = {
     id: (crypto?.randomUUID ? crypto.randomUUID() : "o_" + Date.now()),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -292,13 +529,17 @@ function buildOrderPayload() {
     patientName: patient.name,
     patientPhone: patient.phone,
     referredDoctor: referred.doctor,
-    study: studyNice,
 
     session: { ...sess, bizId },
     patient,
     referred,
 
-    selections: { active: activeArr },
+    notes, // ✅ notas reales del doctor
+
+    selections: {
+      active: activeArr,
+      details: detailsObj
+    },
 
     cbct: {
       ct: BackState.ct || "",
@@ -313,29 +554,100 @@ function buildOrderPayload() {
     status: "pending",
     statusLabel: "Pendiente"
   };
+
+  payload.study_line = buildStudyLine(payload);
+
+  return payload;
 }
 
 /* =========================
    VALIDACIÓN
-   ========================= */
+========================= */
 function validateOrder(payload) {
   if (!payload.patient.name || payload.patient.name.length < 2) return "Pon el nombre del paciente.";
   if (!payload.referred.doctor || payload.referred.doctor.length < 2) return "Pon el nombre del médico (obligatorio).";
   if (payload.patient.phone && payload.patient.phone.length < 8) return "El teléfono del paciente debe tener al menos 8 dígitos.";
-  if (!payload.selections.active.length) return "Selecciona al menos un bloque (círculo).";
+  if (!payload.selections.active.length) return "Selecciona 1 bloque (círculo) y marca las opciones.";
   return "";
 }
 
 /* =========================
-   Guardar (orders + patients) ✅
-   ========================= */
-function saveOrder(payload) {
-  // 1) órdenes
+   SUPABASE HELPERS
+========================= */
+async function getAuthUserSafe() {
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (error) return null;
+    return data?.user || null;
+  } catch {
+    return null;
+  }
+}
+async function getMyTeamIdSafe(userId) {
+  const { data, error } = await supabase
+    .from("team_members")
+    .select("team_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) return null;
+  return data?.team_id || null;
+}
+
+function makeFolio() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,"0");
+  const day = String(d.getDate()).padStart(2,"0");
+  const rnd = Math.random().toString(16).slice(2,6).toUpperCase();
+  return `ORL-${y}${m}${day}-${rnd}`;
+}
+
+async function sendOrderToSupabase(payload) {
+  const user = await getAuthUserSafe();
+  if (!user) throw new Error("No hay sesión activa. Inicia sesión.");
+
+  const teamId = await getMyTeamIdSafe(user.id);
+  if (!teamId) throw new Error("Tu usuario no está vinculado a un team (team_members).");
+
+  const studyLine = buildStudyLine(payload);
+  const docNotes = String(payload.notes || "").trim();
+
+  const row = {
+    doctor_id: user.id,
+    team_id: teamId,
+
+    patient_name: payload.patient?.name || payload.patientName || "",
+    patient_phone: payload.patient?.phone || payload.patientPhone || null,
+    patient_email: payload.patient?.email || null,
+
+    folio: payload.folio || makeFolio(),
+    status: payload.status || "pending",
+
+    // ✅ donde quieres que salga bonito en el modal:
+    study: studyLine,
+
+    // ✅ solo lo que escribió el doc:
+    notes: docNotes,
+  };
+
+  const { data, error } = await supabase
+    .from("orders")
+    .insert([row])
+    .select("id, folio, team_id, created_at")
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+/* =========================
+   Guardar local (opcional)
+========================= */
+function saveOrderLocal(payload) {
   const orders = safeJSON(ORDERS_KEY, []);
   orders.push(payload);
   saveJSON(ORDERS_KEY, orders);
 
-  // 2) pacientes oficiales (pos_patients_v1)
   const patients = safeJSON(PATIENTS_KEY, []);
   const bizId = payload.bizId || "ORLINE_MAIN";
 
@@ -370,36 +682,34 @@ function saveOrder(payload) {
       age: payload.patient?.age || "",
       dob: payload.patient?.dob || "",
       address: payload.patient?.address || "",
-
       status: "pending",
       flags: { urgent:false, missing:false, followup:false },
       followups: [],
       notes: "",
-
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });
   }
 
   saveJSON(PATIENTS_KEY, patients);
-
-  // 3) evento para que Dashboard/Pacientes refresquen (misma pestaña)
   window.dispatchEvent(new CustomEvent("orline:ordersUpdated", { detail: payload }));
 }
 
 /* =========================
    Reset
-   ========================= */
+========================= */
 function resetForm() {
-  ["pName","pPhone","pAge","pDob","pAddress","refDoctor","refCedula","refTel","refEmail"].forEach(id => {
+  ["pName","pPhone","pAge","pDob","pAddress","refDoctor","refCedula","refTel","refEmail","docNotes"].forEach(id => {
     const el = $(id);
     if (el) el.value = "";
   });
 
-  document.querySelectorAll(".order-card.is-active").forEach(card => {
-    card.classList.remove("is-active");
-    card.querySelectorAll('input[type="checkbox"], input[type="radio"]').forEach(i => i.checked = false);
-    card.querySelectorAll('input[type="text"]').forEach(i => i.value = "");
+  // cards
+  getCards().forEach(card => {
+    card.classList.remove("is-active", "is-disabled");
+    clearCardInputs(card);
+    const cid = card.getAttribute("data-card");
+    if (cid) setPickedText(cid, "—");
   });
 
   BackState.ct = "";
@@ -425,7 +735,7 @@ function resetForm() {
 
 /* =========================
    Confirm Modal
-   ========================= */
+========================= */
 let __confirmModalInstance = null;
 function ensureConfirmModal() {
   const modalEl = $("confirmSendModal");
@@ -433,34 +743,37 @@ function ensureConfirmModal() {
   if (!__confirmModalInstance) __confirmModalInstance = new bootstrap.Modal(modalEl, { backdrop:"static", keyboard:false });
   return __confirmModalInstance;
 }
-function escapeHtml(s) {
-  return String(s ?? "")
-    .replaceAll("&","&amp;").replaceAll("<","&lt;")
-    .replaceAll(">","&gt;").replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
-}
+
 function openConfirmModal(payload) {
   const modalEl = $("confirmSendModal");
   const modal = ensureConfirmModal();
 
+  const line = payload.study_line || buildStudyLine(payload);
+  const notes = String(payload.notes || "").trim() || "—";
+  const teeth = (payload.cbct?.teeth || []).join(", ") || "—";
+
   if (!modal || !modalEl) {
-    const ok = window.confirm("¿Confirmas que esté todo correcto?\n\nSi: enviar\nCancelar: revisar");
+    const ok = window.confirm(`${line}\n\nNotas: ${notes}\n\nCT: ${payload.cbct?.ct || "—"}\nDientes: ${teeth}\n\n¿Enviar?`);
     return Promise.resolve(ok);
   }
 
   const summary = $("confirmSendSummary");
   if (summary) {
-    const active = payload.selections?.active || [];
-    const teeth = (payload.cbct?.teeth || []).join(", ");
     summary.innerHTML = `
       <div class="small">
         <div><b>Paciente:</b> ${escapeHtml(payload.patient.name || "—")}</div>
         <div><b>Tel:</b> ${escapeHtml(payload.patient.phone || "—")}</div>
-        <div><b>Médico:</b> ${escapeHtml(payload.referred.doctor || "—")}</div>
+
+        <hr class="my-2" style="opacity:.12">
+
+        <div class="fw-semibold">${escapeHtml(line)}</div>
+
+        <div class="mt-2"><b>Notas:</b> ${escapeHtml(notes)}</div>
+
+        <hr class="my-2" style="opacity:.12">
+
         <div><b>CT:</b> ${escapeHtml(payload.cbct?.ct || "—")}</div>
-        <div><b>Dientes:</b> ${escapeHtml(teeth || "—")}</div>
-        <div><b>Estudios:</b> ${escapeHtml(active.map(x => LABELS[x] || x).join(", ") || "—")}</div>
-        <div><b>Estado:</b> ${escapeHtml(payload.statusLabel || "Pendiente")}</div>
+        <div><b>Dientes:</b> ${escapeHtml(teeth)}</div>
       </div>
     `;
   }
@@ -475,22 +788,24 @@ function openConfirmModal(payload) {
       modal.hide();
     };
 
-    btnYes.onclick = () => resolveAfterHide(true);
-    btnNo.onclick  = () => resolveAfterHide(false);
+    if (btnYes) btnYes.onclick = () => resolveAfterHide(true);
+    if (btnNo)  btnNo.onclick  = () => resolveAfterHide(false);
 
     modal.show();
   });
 }
 
 /* =========================
-   Bind UI 
-   ======================== */
+   Bind UI
+========================= */
 function bindUI() {
   bindFlip();
   bindDots();
   bindCardClick();
+  bindPickedPreviewLive();
   initBackUI();
   bindPhoneOnlyNumbers();
+  clearPickedAll();
 
   $("btnResetOrder")?.addEventListener("click", () => {
     hideMsg($("orderMsg"));
@@ -499,22 +814,35 @@ function bindUI() {
   });
 
   $("btnSaveOrder")?.addEventListener("click", async () => {
-    hideMsg($("orderMsg"));
-    hideMsg($("orderErr"));
+    try {
+      hideMsg($("orderMsg"));
+      hideMsg($("orderErr"));
 
-    const payload = buildOrderPayload();
-    const err = validateOrder(payload);
-    if (err) return showMsg($("orderErr"), err, 3000);
+      const payload = buildOrderPayload();
+      const err = validateOrder(payload);
+      if (err) return showMsg($("orderErr"), err, 3200);
 
-    const ok = await openConfirmModal(payload);
-    if (!ok) return showMsg($("orderMsg"), "Listo, revisa la orden y vuelve a enviar.", 2500);
+      const ok = await openConfirmModal(payload);
+      if (!ok) return showMsg($("orderMsg"), "Listo, revisa la orden y vuelve a enviar.", 2200);
 
-    //  AQUI ESTABA TU BUG: sí o sí hay que guardar
-    saveOrder(payload);
+      showMsg($("orderMsg"), "Enviando a Supabase…", 0);
+      const inserted = await sendOrderToSupabase(payload);
 
-    showMsg($("orderMsg"), "Orden guardada correctamente ", 2500);
-    setTimeout(resetForm, 450);
-    setTimeout(fitBookHeight, 120);
+      payload.supabaseOrderId = inserted?.id || null;
+      payload.folio = inserted?.folio || payload.folio || null;
+
+      // local opcional
+      saveOrderLocal(payload);
+
+      showMsg($("orderMsg"), `Orden enviada ;) Folio: ${payload.folio || "—"}`, 2600);
+      setTimeout(resetForm, 450);
+      setTimeout(fitBookHeight, 120);
+
+    } catch (e) {
+      console.error(e);
+      showMsg($("orderErr"), e?.message || "No se pudo enviar la orden.", 4500);
+      hideMsg($("orderMsg"));
+    }
   });
 
   setTimeout(fitBookHeight, 120);
@@ -523,65 +851,11 @@ function bindUI() {
     clearTimeout(window.__fitBookH);
     window.__fitBookH = setTimeout(fitBookHeight, 80);
   });
-  window.addEventListener("load", () => setTimeout(fitBookHeight, 120));
-}
 
-document.addEventListener("DOMContentLoaded", bindUI);
-
-function bindFlip() {
-  const btn = $("btnFlip");
-  const book = $("orderBook");
-  if (!btn || !book) return;
-
-  //  si el botón está dentro de <form> y no tiene type="button"
-  // al dar click hace submit y recarga → parece que "no voltea"
-  btn.setAttribute("type", "button");
-
-  btn.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    book.classList.toggle("is-flipped");
-
-    const icon = btn.querySelector("i");
-    if (icon) {
-      icon.classList.toggle("bi-arrow-left-right");
-      icon.classList.toggle("bi-arrow-repeat");
-    }
-
-    btn.title = book.classList.contains("is-flipped") ? "Ver frente" : "Ver reverso";
-
-    //  mejor timing
-    requestAnimationFrame(() => fitBookHeight());
-    setTimeout(() => fitBookHeight(), 60);
-    setTimeout(() => fitBookHeight(), 520);
+  window.addEventListener("load", () => {
+    setTimeout(fitBookHeight, 120);
+    setTimeout(fitBookHeight, 600);
   });
 }
 
-/* refuerzo: si por CSS/animación tarda en cargar, vuelve a medir */
-window.addEventListener("load", () => {
-  setTimeout(() => fitBookHeight(), 120);
-  setTimeout(() => fitBookHeight(), 600);
-});
-
-// Sólo si ya tienes supabase disponible global o importado como module
-async function getAuthUserSafe() {
-  try {
-    const { data, error } = await supabase.auth.getUser();
-    if (error) return null;
-    return data?.user || null;
-  } catch {
-    return null;
-  }
-}
-
-async function getMyTeamIdSafe(userId) {
-  const { data, error } = await supabase
-    .from("team_members")
-    .select("team_id")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (error) return null;
-  return data?.team_id || null;
-}
-
+document.addEventListener("DOMContentLoaded", bindUI);

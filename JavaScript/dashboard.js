@@ -25,13 +25,17 @@ function normalizeStr(x) {
   return String(x ?? "").trim();
 }
 
+function redirectReplace(url) {
+  window.location.replace(url);
+}
+
 /* =========================
-   Auth / Profile
+   Auth / Profile (FIX NO LOOP)
 ========================= */
 async function getAuthUser() {
-  const { data, error } = await supabase.auth.getUser();
-  if (error) return null;
-  return data?.user || null;
+  // más estable que getUser cuando hay race
+  const { data } = await supabase.auth.getSession();
+  return data?.session?.user || null;
 }
 
 async function getMyProfile(userId) {
@@ -39,17 +43,17 @@ async function getMyProfile(userId) {
     .from("profiles")
     .select("id, role, display_name, clinic_name, created_at")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
 
-  if (error) return null;
-  return data;
+  if (error) {
+    console.warn("profiles error:", error);
+    return null;
+  }
+  return data || null;
 }
 
-function redirectReplace(url) {
-  window.location.replace(url);
-}
-
-async function requireDoctorOrRedirect() {
+// ✅ Guard según página
+async function guardDoctorOrRedirect() {
   // si vienes de logout
   if (sessionStorage.getItem(SESSION_LOGOUT_FLAG) === "1") {
     sessionStorage.removeItem(SESSION_LOGOUT_FLAG);
@@ -65,31 +69,27 @@ async function requireDoctorOrRedirect() {
   }
 
   const profile = await getMyProfile(user.id);
+
+  // ✅ NO hacemos signOut por no poder leer profile (evita loop)
   if (!profile) {
-    await supabase.auth.signOut();
-    redirectReplace("Index.html");
-    return null;
+    // muestra algo y reintenta luego
+    console.warn("No profile (o RLS). Seguimos con fallback.");
+    return { user, profile: { role: "doctor", display_name: user.email || "Doctor", clinic_name: "" }, fallback: true };
   }
 
-  // Solo doctores deben estar aquí
+  // ✅ redirección por rol (SIN mandar a dashboard por error)
   if (profile.role !== "doctor") {
-    if (profile.role === "admin") redirectReplace("Index.html"); // o Admin.html si lo separas
-    else if (profile.role === "employee") redirectReplace("Empleado.html");
+    if (profile.role === "employee") redirectReplace("Empleado.html");
     else redirectReplace("Index.html");
     return null;
   }
 
-  // si doctor no completó perfil mínimo
-  if (!profile.clinic_name) {
-    redirectReplace("Index.html"); // vuelve para completar
-    return null;
-  }
-
+  // ✅ NO obligamos clinic_name (si no, te manda a login y parece que “pidió iniciar sesión otra vez”)
   return { user, profile };
 }
 
 /* =========================
-   Data: Orders (Supabase)
+   Data: Orders
 ========================= */
 function normalizeStatus(raw) {
   const s = normalizeStr(raw).toLowerCase();
@@ -140,12 +140,15 @@ async function fetchOrdersForDoctor(doctorId) {
     .eq("doctor_id", doctorId)
     .order("created_at", { ascending: false });
 
-  if (error) return [];
+  if (error) {
+    console.warn("orders error:", error);
+    return [];
+  }
 
   return (data || []).map(o => ({
     id: o.id,
     patientName: normalizeStr(o.patient_name) || "—",
-    study: normalizeStr(o.folio) || "—", // si folio lo usas como "estudio" cámbialo
+    study: normalizeStr(o.folio) || "—",
     ymd: parseISODateToYMD(o.created_at),
     status: normalizeStatus(o.status),
     raw: o
@@ -197,7 +200,7 @@ function renderHeader(ctx) {
   const name = normalizeStr(ctx.profile?.display_name) || "Doctor";
   setText("docWelcomeTitle", `Bienvenido, ${name}`);
   setText("docClinicBadge", ctx.profile?.clinic_name || "—");
-  setText("docCabinetBadge", "—"); // si luego agregas cabinet en schema
+  setText("docCabinetBadge", "—");
 }
 
 function renderKpis() {
@@ -209,7 +212,7 @@ function renderKpis() {
 
   setText("kpiTotal", String(total));
   setText("kpiPending", String(pending));
-  setText("kpiProcess", String(process)); // si existe en tu HTML
+  setText("kpiProcess", String(process));
   setText("kpiReady", String(ready));
   setText("kpiDelivered", String(delivered));
 }
@@ -283,6 +286,7 @@ function bindRowActions() {
       const r = state.filtered.find(x => x.id === id);
       if (!r) return;
 
+      // ✅ aquí puedes abrir modal real si quieres, por ahora info rápida
       alert(
         `Paciente: ${r.patientName}\n` +
         `Folio/Estudio: ${r.study}\n` +
@@ -350,12 +354,11 @@ function setupLogout() {
    Boot
 ========================= */
 async function boot() {
-  const ctx = await requireDoctorOrRedirect();
+  const ctx = await guardDoctorOrRedirect();
   if (!ctx) return;
 
   renderHeader(ctx);
 
-  // cargar datos
   state.all = await fetchOrdersForDoctor(ctx.user.id);
 
   setupFilters();

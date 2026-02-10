@@ -3,25 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ORLINE — Pacientes</title>
+  <title>ORLINE — Órdenes / Estudios</title>
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="Estilos/dashboard.css">
   <link rel="shortcut icon" href="Multimedia/icono.ico" type="image/x-icon">
 
-  <!-- ✅ MODO DOCTOR (solo lectura) -->
-  <style>
-    /* Oculta acciones de edición para doctor */
-    .doc-readonly { display: none !important; }
-
-    /* Bloquea controles (por si se quedan visibles) */
-    .doc-disabled {
-      pointer-events: none !important;
-      opacity: .55 !important;
-      filter: saturate(.85);
-    }
-  </style>
 </head>
 
 <body class="dash-body">
@@ -40,7 +28,7 @@
       <nav class="topfb-center" aria-label="Navegación">
         <a class="topfb-tab" href="Dashboard.html" title="Inicio"><i class="bi bi-house-door"></i></a>
         <a class="topfb-tab" href="Ordenes.html" title="Crear orden"><i class="bi bi-clipboard-plus"></i></a>
-        <a class="topfb-tab active" href="Pacientes.html" title="Pacientes"><i class="bi bi-person-vcard"></i></a>
+        <a class="topfb-tab active" href="Pacientes.html" title="Órdenes / Estudios"><i class="bi bi-clipboard2-pulse"></i></a>
       </nav>
 
       <div class="topfb-right">
@@ -62,9 +50,9 @@
         <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
           <div>
             <h4 class="mb-1 fw-bold">
-              <i class="bi bi-person-lines-fill me-2"></i>Dashboard de Pacientes
+              <i class="bi bi-clipboard2-pulse me-2"></i>Órdenes / Estudios
             </h4>
-            <div class="muted">Vista de doctor (solo lectura): pacientes, notas y links.</div>
+            <div class="muted">Solo lectura: paciente, estudio solicitado, estado y carpetas/links.</div>
           </div>
 
           <div class="d-flex flex-wrap gap-2">
@@ -90,17 +78,17 @@
         <hr class="my-3" style="opacity:.12">
 
         <div class="row g-2 align-items-end">
-          <div class="col-12 col-lg-5">
+          <div class="col-12 col-lg-6">
             <label class="muted small mb-1">Buscar</label>
             <div class="input-group">
               <span class="input-group-text" style="background:transparent; border:1px solid var(--stroke); color:var(--muted); border-radius:14px 0 0 14px;">
                 <i class="bi bi-search"></i>
               </span>
-              <input id="pSearch" type="text" class="form-control" placeholder="Nombre, teléfono, doctor, folio, etc.">
+              <input id="pSearch" type="text" class="form-control" placeholder="Paciente, teléfono, estudio, ID...">
             </div>
           </div>
 
-          <div class="col-6 col-lg-2">
+          <div class="col-6 col-lg-3">
             <label class="muted small mb-1">Estado</label>
             <select id="pFilterStatus" class="form-select">
               <option value="all">Todos</option>
@@ -111,7 +99,7 @@
             </select>
           </div>
 
-          <div class="col-6 col-lg-2">
+          <div class="col-6 col-lg-3">
             <label class="muted small mb-1">Ordenar</label>
             <select id="pSort" class="form-select">
               <option value="recent">Más recientes</option>
@@ -119,29 +107,6 @@
               <option value="status">Estado</option>
             </select>
           </div>
-
-          <!-- 🚫 Oculto para doctor -->
-          <div class="col-12 col-lg-3 d-flex gap-2 justify-content-lg-end doc-readonly">
-            <button class="btn btn-soft flex-grow-1 flex-lg-grow-0" id="btnNewPatient" type="button">
-              <i class="bi bi-person-plus me-2"></i>Nuevo paciente
-            </button>
-            <button class="btn btn-primary flex-grow-1 flex-lg-grow-0" id="btnExportPatients" type="button">
-              <i class="bi bi-download me-2"></i>Exportar
-            </button>
-          </div>
-        </div>
-
-        <!-- ✅ Chips: si el doctor solo filtra, pueden quedarse -->
-        <div class="mt-3 d-flex flex-wrap gap-2">
-          <button class="btn btn-soft py-1 px-3" id="chipUrgent" type="button">
-            <i class="bi bi-exclamation-triangle me-1"></i>Urgentes
-          </button>
-          <button class="btn btn-soft py-1 px-3" id="chipMissing" type="button">
-            <i class="bi bi-question-circle me-1"></i>Falta info
-          </button>
-          <button class="btn btn-soft py-1 px-3" id="chipFollowup" type="button">
-            <i class="bi bi-clock-history me-1"></i>Con seguimiento
-          </button>
         </div>
       </section>
 
@@ -151,16 +116,16 @@
         <div class="col-12 col-lg-4">
           <div class="glass p-3 h-100">
             <div class="d-flex align-items-center justify-content-between mb-2">
-              <div class="fw-bold"><i class="bi bi-list-ul me-2"></i>Pacientes</div>
+              <div class="fw-bold"><i class="bi bi-list-ul me-2"></i>Listado</div>
               <div class="muted small" id="pResultsInfo">0 resultados</div>
             </div>
 
             <div class="d-flex flex-column gap-2" id="patientsList"></div>
 
             <div id="patientsEmpty" class="text-center p-4 d-none">
-              <i class="bi bi-person-x fs-1" style="opacity:.55"></i>
-              <div class="fw-bold mt-2">Sin pacientes</div>
-              <div class="muted">Ajusta filtros o busca por nombre.</div>
+              <i class="bi bi-inbox fs-1" style="opacity:.55"></i>
+              <div class="fw-bold mt-2">Sin resultados</div>
+              <div class="muted">Prueba otro filtro o busca por teléfono.</div>
             </div>
           </div>
         </div>
@@ -171,9 +136,9 @@
             <div id="patientDetailEmpty">
               <div class="d-flex align-items-center gap-2 mb-2">
                 <i class="bi bi-arrow-left-circle"></i>
-                <div class="fw-bold">Selecciona un paciente</div>
+                <div class="fw-bold">Selecciona una orden</div>
               </div>
-              <div class="muted">Aquí verás su información, estado, notas y seguimiento.</div>
+              <div class="muted">Verás el paciente, el estudio solicitado y el estado.</div>
             </div>
 
             <div id="patientDetailBody" class="d-none">
@@ -183,13 +148,9 @@
                   <div class="muted" id="dMeta">—</div>
                 </div>
 
-                <!-- 🚫 Oculto: editar / agregar nota (si NO quieres que el doctor agregue notas) -->
-                <div class="d-flex flex-wrap gap-2 doc-readonly">
-                  <button class="btn btn-soft" id="btnEditPatient" type="button">
-                    <i class="bi bi-pencil me-1"></i>Editar
-                  </button>
-                  <button class="btn btn-soft" id="btnAddNote" type="button">
-                    <i class="bi bi-journal-plus me-1"></i>Nota
+                <div class="d-flex gap-2">
+                  <button class="btn btn-outline-light btn-sm" id="btnOpenOrderModal" type="button">
+                    <i class="bi bi-eye me-1"></i>Ver
                   </button>
                 </div>
               </div>
@@ -205,34 +166,21 @@
                   </div>
                 </div>
 
-                <!-- ✅ Estado SOLO LECTURA (sin select) -->
                 <div class="col-12">
                   <div class="cardx p-3">
                     <div class="muted small">Estado</div>
                     <div class="fw-bold" id="dStatusText">—</div>
-                    <!-- 🚫 Quitado el select para doctor -->
+                  </div>
+                </div>
+
+                <div class="col-12">
+                  <div class="cardx p-3">
+                    <div class="muted small">Estudio</div>
+                    <div class="fw-bold fs-5" id="dStudy">—</div>
                   </div>
                 </div>
               </div>
 
-              <!-- Seguimiento (solo ver) -->
-              <div class="mt-3 cardx p-3">
-                <div class="d-flex align-items-center justify-content-between">
-                  <div class="fw-bold">
-                    <i class="bi bi-clock-history me-2"></i>Seguimiento
-                  </div>
-                  <!-- 🚫 Oculto para doctor -->
-                  <button class="btn btn-soft py-1 px-3 doc-readonly" id="btnAddFollowup" type="button">
-                    <i class="bi bi-plus me-1"></i>Agregar
-                  </button>
-                </div>
-                <div class="muted small mt-1">Historial informativo (solo lectura).</div>
-
-                <div class="mt-3 d-flex flex-column gap-2" id="followupList"></div>
-                <div id="followupEmpty" class="muted small mt-3">Sin seguimiento todavía.</div>
-              </div>
-
-              <!-- Órdenes -->
               <div class="mt-3 cardx p-3">
                 <div class="fw-bold mb-2">
                   <i class="bi bi-clipboard-data me-2"></i>Órdenes / Estudios
@@ -241,7 +189,7 @@
                   <table class="table table-sm align-middle mb-0">
                     <thead style="opacity:.85">
                       <tr>
-                        <th>Folio</th>
+                        <th>Estudio</th>
                         <th>Fecha</th>
                         <th>Estado</th>
                         <th class="text-end">Acción</th>
@@ -250,25 +198,24 @@
                     <tbody id="ordersByPatient"></tbody>
                   </table>
                 </div>
-                <div id="ordersEmpty" class="muted small mt-2 d-none">Sin órdenes asociadas.</div>
+                <div id="ordersEmpty" class="muted small mt-2 d-none">Sin órdenes.</div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- LINKS (doctor solo VE y ABRE) -->
+        <!-- LINKS -->
         <div class="col-12 col-lg-3">
           <div class="glass p-3 h-100">
             <div class="d-flex align-items-center justify-content-between mb-2">
               <div class="fw-bold"><i class="bi bi-folder2-open me-2"></i>Carpetas / Links</div>
-              <!-- 🚫 Oculto para doctor -->
-              <button class="btn btn-soft py-1 px-3 doc-readonly" id="btnAddShareLink" type="button">
-                <i class="bi bi-plus me-1"></i>Agregar
-              </button>
             </div>
 
-            <div class="muted small mb-3">
-              Links del estudio (solo lectura). Da clic para abrir.
+            <div class="muted small mb-2">Links del estudio (solo lectura). Da clic para abrir.</div>
+
+            <div class="cardx p-3 mb-3">
+              <div class="muted small">Estudio seleccionado</div>
+              <div class="fw-bold" id="dSelectedStudy">—</div>
             </div>
 
             <div class="d-flex flex-column gap-2" id="shareLinksList"></div>
@@ -297,30 +244,73 @@
     </div>
   </main>
 
-  <!-- ⚠️ Si quieres, estos modales se pueden borrar totalmente para doctor.
-       Los dejo porque tu JS tal vez los usa, pero como ocultamos botones no se pueden abrir. -->
+  <nav class="ios-tabbar d-lg-none" aria-label="Navegación móvil">
+  <a class="ios-tab" href="Dashboard.html" data-route="dashboard"><i class="bi bi-house-door"></i></a>
+  <a class="ios-tab" href="Ordenes.html" data-route="ordenes"><i class="bi bi-box-seam"></i></a>
+  <a class="ios-tab" href="Pacientes.html"  data-route="pacientes"><i class="bi bi-bar-chart"></i></a>
+</nav>
 
-  <div class="modal fade" id="logoutModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+  <!-- MODAL DETALLE ORDEN -->
+  <div class="modal fade" id="orderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
       <div class="modal-content modal-dark">
         <div class="modal-header border-0">
-          <h5 class="modal-title">Cerrar sesión</h5>
+          <h5 class="modal-title"><i class="bi bi-clipboard2-check me-2"></i>Detalle de orden</h5>
           <button class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
         </div>
+
         <div class="modal-body">
-          <p class="muted mb-0">¿Seguro que deseas cerrar sesión?</p>
+          <div class="cardx p-3 mb-3">
+            <div class="d-flex flex-wrap justify-content-between gap-2">
+              <div>
+                <div class="muted small">Paciente</div>
+                <div class="fw-bold" id="mPatient">—</div>
+                <div class="muted small mt-1" id="mContact">—</div>
+              </div>
+              <div class="text-end">
+                <div class="muted small">Estado</div>
+                <div class="fw-bold" id="mStatus">—</div>
+                <div class="muted small mt-1" id="mDate">—</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-2">
+            <div class="col-12 col-lg-6">
+              <div class="cardx p-3 h-100">
+                <div class="muted small">Estudio</div>
+                <div class="fw-bold fs-5" id="mStudy">—</div>
+                <div class="muted small mt-2">Folio / ID</div>
+                <div class="fw-semibold" id="mFolio">—</div>
+              </div>
+            </div>
+
+            <div class="col-12 col-lg-6">
+              <div class="cardx p-3 h-100">
+                <div class="muted small">Notas</div>
+                <div class="muted line-clamp-2" id="mNotes" style="white-space:pre-wrap">—</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-3 cardx p-3">
+            <div class="fw-bold mb-2"><i class="bi bi-folder2-open me-2"></i>Carpetas / Links</div>
+            <div class="d-flex flex-column gap-2" id="mLinks"></div>
+            <div class="muted small d-none" id="mLinksEmpty">Sin links todavía.</div>
+          </div>
         </div>
+
         <div class="modal-footer border-0">
-          <button class="btn btn-soft" data-bs-dismiss="modal" type="button">Cancelar</button>
-          <button id="confirmLogout" class="btn btn-danger" type="button">Cerrar sesión</button>
+          <button class="btn btn-soft" data-bs-dismiss="modal" type="button">Cerrar</button>
         </div>
       </div>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="JavaScript/Pacientes.js"></script>
+  <script type="module" src="JavaScript/Pacientes.js"></script>
   <script src="JavaScript/theme.js"></script>
   <script src="JavaScript/topnav.js"></script>
+  <script src="JavaScript/tabbar.js"></script>
 </body>
 </html>

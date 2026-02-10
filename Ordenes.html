@@ -10,8 +10,23 @@
 
   <link rel="stylesheet" href="Estilos/dashboard.css">
   <link rel="stylesheet" href="Estilos/ordenes.css">
-    <link rel="shortcut icon" href="Multimedia/icono.ico" type="image/x-icon">
+  <link rel="shortcut icon" href="Multimedia/icono.ico" type="image/x-icon">
 
+  <style>
+    /* Preview de selección dentro de cada card */
+    .order-picked{
+      margin-top: 6px;
+      line-height: 1.2;
+      opacity: .9;
+    }
+    /* Cuando un bloque grande está deshabilitado */
+    .order-card.is-disabled{
+      pointer-events: none;
+      opacity: .55;
+      filter: saturate(.85);
+    }
+    /* Pero el dot del bloque deshabilitado NO debe ser clickeable (se respeta pointer-events) */
+  </style>
 </head>
 
 <body class="dash-body">
@@ -152,6 +167,7 @@
                   <div class="order-head">
                     <div class="order-title">Estudio Ortodoncia 3D</div>
                     <div class="order-sub muted small">CBCT, panorámica, lateral, escaneo intraoral, trazados</div>
+                    <div class="order-picked tiny muted" data-picked="ort3d">—</div>
                   </div>
 
                   <div class="order-body" data-card-body="ort3d">
@@ -175,6 +191,7 @@
                   <div class="order-head">
                     <div class="order-title">Estudio Ortodoncia 2D</div>
                     <div class="order-sub muted small">Panorámica, lateral, fotos, trazado cefalométrico</div>
+                    <div class="order-picked tiny muted" data-picked="ort2d">—</div>
                   </div>
 
                   <div class="order-body" data-card-body="ort2d">
@@ -198,6 +215,7 @@
                   <div class="order-head">
                     <div class="order-title">Radiografías Digitales</div>
                     <div class="order-sub muted small">Panorámica, lateral, ATM, senos maxilares, etc.</div>
+                    <div class="order-picked tiny muted" data-picked="rx">—</div>
                   </div>
 
                   <div class="order-body" data-card-body="rx">
@@ -222,6 +240,7 @@
                   <div class="order-head">
                     <div class="order-title">Fotografías Intraorales y Extraorales</div>
                     <div class="order-sub muted small">Digitales o impresas, fondo blanco/negro</div>
+                    <div class="order-picked tiny muted" data-picked="photos">—</div>
                   </div>
 
                   <div class="order-body" data-card-body="photos">
@@ -245,6 +264,7 @@
                   <div class="order-head">
                     <div class="order-title">Escaneo Intraoral</div>
                     <div class="order-sub muted small">Maxilar superior, inferior o ambos</div>
+                    <div class="order-picked tiny muted" data-picked="scan">—</div>
                   </div>
 
                   <div class="order-body" data-card-body="scan">
@@ -267,6 +287,7 @@
                   <div class="order-head">
                     <div class="order-title">Impresión 3D</div>
                     <div class="order-sub muted small">Con o sin zócalo, superior/inferior/ambos</div>
+                    <div class="order-picked tiny muted" data-picked="print3d">—</div>
                   </div>
 
                   <div class="order-body" data-card-body="print3d">
@@ -289,6 +310,15 @@
                 </article>
               </div>
             </section>
+
+        <!-- Notas del doctor -->
+          <section class="glass p-4 mt-3">
+            <div class="fw-bold mb-2">Notas del doctor</div>
+            <textarea id="docNotes" class="form-control form-glass" rows="3"
+              placeholder="Ej: Sacar buena resolución, paciente con dolor, etc."></textarea>
+          </section>
+
+
 
             <!-- Método de envío -->
             <section class="glass p-4 mt-3">
@@ -393,7 +423,7 @@
                 </button>
               </div>
 
-                   <!-- FILA MEDIA: caja grande derecha -->
+              <!-- FILA MEDIA: caja grande derecha -->
               <div class="back-card back-wide back-wide-right">
                 <div class="back-title">Ventana</div>
 
@@ -417,22 +447,17 @@
                     <div class="ct-sub muted small">Hasta 3er molar / ATM bilateral</div>
                   </div>
                 </button>
-<div>
-      <div class="ct-selected mt-3">
+
+                <div class="ct-selected mt-3">
                   <div class="tiny muted">Selección:</div>
                   <div class="fw-bold" id="ctSelectedLabel">—</div>
                 </div>
               </div>
-</div>
-        
-
-              
-
 
               <!-- FILA MEDIA: titulo centro -->
               <div class="back-card back-zone-title">
                 ZONA DE MAYOR INTERÉS
-              </div>              
+              </div>
 
               <!-- FILA INFERIOR: Odontograma -->
               <div class="back-card back-odontogram">
@@ -510,6 +535,16 @@
     </div>
   </main>
 
+
+    <!-- =========================
+     TAB BAR MOBILE
+========================= -->
+<nav class="ios-tabbar d-lg-none" aria-label="Navegación móvil">
+  <a class="ios-tab" href="Dashboard.html" data-route="dashboard"><i class="bi bi-house-door"></i></a>
+  <a class="ios-tab" href="Ordenes.html" data-route="ordenes"><i class="bi bi-box-seam"></i></a>
+  <a class="ios-tab" href="Pacientes.html" data-route="pacientes"><i class="bi bi-bar-chart"></i></a>
+</nav>
+
   <!-- MODAL CONFIRMAR ENVÍO  -->
   <div class="modal fade" id="confirmSendModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -539,7 +574,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
   <script src="JavaScript/theme.js"></script>
-  <script src="JavaScript/ordenes.js"></script>
-    <script src="JavaScript/topnav.js"></script>
+  <script type="module" src="JavaScript/ordenes.js"></script>
+  <script src="JavaScript/topnav.js"></script>
+  <script src="JavaScript/tabbar.js"></script>
 </body>
 </html>
